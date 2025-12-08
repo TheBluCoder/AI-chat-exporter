@@ -5,93 +5,102 @@
 
 // DOM elements
 const exportBtn = document.getElementById("exportBtn");
-const copyBtn = document.getElementById("copyBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const output = document.getElementById("output");
-const loading = document.getElementById("loading");
-const stats = document.getElementById("stats");
-const error = document.getElementById("error");
-const actions = document.getElementById("actions");
+const btnCopyJson = document.getElementById("btnCopyJson");
+const btnDownloadJson = document.getElementById("btnDownloadJson");
+const btnDownloadMd = document.getElementById("btnDownloadMd");
+const btnExportPdf = document.getElementById("btnExportPdf");
+
+const statusContainer = document.getElementById("statusContainer");
+const statusTitle = document.getElementById("statusTitle");
+const statusPercent = document.getElementById("statusPercent");
+const progressBar = document.getElementById("progressBar");
+const statusSubtitle = document.getElementById("statusSubtitle");
+
+const statsGrid = document.getElementById("statsGrid");
+const statMessages = document.getElementById("statMessages");
+const statMedia = document.getElementById("statMedia");
+const statDuration = document.getElementById("statDuration");
+
+const actionsGrid = document.getElementById("actionsGrid");
+const errorBox = document.getElementById("errorBox");
+const errorText = document.getElementById("errorText");
 
 let lastResult = null;
+let scrapeStartTime = 0;
+
+/**
+ * Reset UI state
+ */
+function resetUI() {
+  errorBox.classList.remove("show");
+  statsGrid.classList.remove("show");
+  actionsGrid.classList.remove("show");
+  statusContainer.classList.remove("active");
+  progressBar.classList.remove("indeterminate", "complete");
+  progressBar.style.width = "0%";
+}
 
 /**
  * Show loading state
  */
 function showLoading() {
-  loading.classList.add("active");
+  resetUI();
+  statusContainer.classList.add("active");
+  statusTitle.textContent = "Processing...";
+  statusPercent.textContent = "";
+  statusSubtitle.textContent = "Extracting conversation data...";
+  progressBar.classList.add("indeterminate");
+
   exportBtn.disabled = true;
-  hideStats();
-  hideError();
-  hideOutput();
-  hideActions();
+  exportBtn.innerHTML = '<span class="material-symbols-outlined">sync</span><span>Processing...</span>';
 }
 
 /**
  * Hide loading state
  */
 function hideLoading() {
-  loading.classList.remove("active");
   exportBtn.disabled = false;
-}
-
-/**
- * Show statistics
- */
-function showStats(message) {
-  stats.textContent = message;
-  stats.classList.add("show");
-}
-
-/**
- * Hide statistics
- */
-function hideStats() {
-  stats.classList.remove("show");
+  exportBtn.innerHTML = '<span class="material-symbols-outlined">download</span><span>Export Current Page</span>';
+  progressBar.classList.remove("indeterminate");
 }
 
 /**
  * Show error message
  */
 function showError(message) {
-  error.textContent = `❌ ${message}`;
-  error.classList.add("show");
+  hideLoading();
+  statusContainer.classList.remove("active");
+  errorText.textContent = message;
+  errorBox.classList.add("show");
 }
 
 /**
- * Hide error message
+ * Show completion state
  */
-function hideError() {
-  error.classList.remove("show");
-}
+function showSuccess(result, durationMs) {
+  hideLoading();
 
-/**
- * Show output
- */
-function showOutput(text) {
-  output.textContent = text;
-  output.classList.add("show");
-}
+  // Update Status
+  statusContainer.classList.add("active");
+  statusTitle.textContent = "Export Complete!";
+  statusPercent.textContent = "100%";
+  statusSubtitle.textContent = "Conversation processed successfully.";
+  progressBar.classList.add("complete");
 
-/**
- * Hide output
- */
-function hideOutput() {
-  output.classList.remove("show");
-}
+  // Update Stats
+  const messageCount = result.count || (result.messages ? result.messages.length : 0);
+  const mediaCount = result.statistics?.generated_media + result.statistics?.uploaded_files ||
+    (result.messages || []).reduce((acc, msg) => acc + (msg.media ? msg.media.length : 0), 0);
 
-/**
- * Show action buttons
- */
-function showActions() {
-  actions.classList.add("show");
-}
+  statMessages.textContent = messageCount;
+  statMedia.textContent = mediaCount;
+  statDuration.textContent = (durationMs / 1000).toFixed(1) + "s";
 
-/**
- * Hide action buttons
- */
-function hideActions() {
-  actions.classList.remove("show");
+  // Show Grids
+  statsGrid.classList.add("show");
+  actionsGrid.classList.add("show");
+
+  console.log("Export successful:", result);
 }
 
 /**
@@ -117,11 +126,10 @@ async function copyToClipboard(text) {
 }
 
 /**
- * Download JSON file
+ * Download text as file
  */
-function downloadJSON(data, filename) {
-  const jsonString = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonString], { type: "application/json" });
+function downloadFile(content, filename, contentType) {
+  const blob = new Blob([content], { type: contentType });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
@@ -146,6 +154,7 @@ function generateFilename(result) {
  * Handle export button click
  */
 async function handleExport() {
+  scrapeStartTime = Date.now();
   showLoading();
 
   try {
@@ -166,12 +175,11 @@ async function handleExport() {
       tab.id,
       { action: "SCRAPE_PAGE" },
       (response) => {
-        hideLoading();
+        const duration = Date.now() - scrapeStartTime;
 
-        // Check for errors
+        // Check for runtime errors
         if (chrome.runtime.lastError) {
-          showError(`Communication error: ${chrome.runtime.lastError.message}`);
-          console.error("Runtime error:", chrome.runtime.lastError);
+          showError(`Connection failed: ${chrome.runtime.lastError.message}. \nTry refreshing the page.`);
           return;
         }
 
@@ -185,32 +193,14 @@ async function handleExport() {
 
         // Display result
         if (response.success) {
-          const messageCount = response.count || 0;
-          const mediaCount = response.messages?.reduce(
-            (total, msg) => total + (msg.media?.length || 0),
-            0
-          ) || 0;
-
-          showStats(
-            `✅ Successfully extracted ${messageCount} message${messageCount !== 1 ? 's' : ''}` +
-            (mediaCount > 0 ? ` with ${mediaCount} media item${mediaCount !== 1 ? 's' : ''}` : '')
-          );
-
-          const jsonString = JSON.stringify(response, null, 2);
-          const size = new Blob([jsonString]).size;
-          showOutput(jsonString);
-          showActions();
-
-          console.log("Export successful:", response);
+          showSuccess(response, duration);
         } else {
           showError(response.error || "Scraping failed");
-          showOutput(JSON.stringify(response, null, 2));
           console.error("Export failed:", response);
         }
       }
     );
   } catch (err) {
-    hideLoading();
     showError(err.message);
     console.error("Export error:", err);
   }
@@ -219,20 +209,74 @@ async function handleExport() {
 /**
  * Handle copy button click
  */
-async function handleCopy() {
+async function handleCopyJson() {
   if (!lastResult) return;
 
   const jsonString = JSON.stringify(lastResult, null, 2);
   const success = await copyToClipboard(jsonString);
+  const originalHtml = btnCopyJson.innerHTML;
 
   if (success) {
-    const originalText = copyBtn.textContent;
-    copyBtn.textContent = "✓ Copied!";
+    btnCopyJson.innerHTML = `<span class="material-symbols-outlined">check</span> Copied!`;
     setTimeout(() => {
-      copyBtn.textContent = originalText;
+      btnCopyJson.innerHTML = originalHtml;
     }, 2000);
   } else {
-    showError("Failed to copy to clipboard");
+    btnCopyJson.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
+    setTimeout(() => {
+      btnCopyJson.innerHTML = originalHtml;
+    }, 2000);
+  }
+}
+
+/**
+ * Handle Download JSON
+ */
+function handleDownloadJson() {
+  if (!lastResult) return;
+  const filename = generateFilename(lastResult);
+  const jsonString = JSON.stringify(lastResult, null, 2);
+  downloadFile(jsonString, filename, "application/json");
+}
+
+/**
+ * Handle Download Markdown
+ */
+async function handleDownloadMd() {
+  if (!lastResult) return;
+  const filename = generateFilename(lastResult).replace('.json', '.md');
+
+  // Temporarily show loading on button
+  const originalHtml = btnDownloadMd.innerHTML;
+  btnDownloadMd.innerHTML = `<span class="material-symbols-outlined">sync</span> Generating...`;
+
+  try {
+    const md = await convertToMarkdown(lastResult);
+    downloadFile(md, filename, "text/markdown");
+    btnDownloadMd.innerHTML = originalHtml;
+  } catch (e) {
+    console.error(e);
+    btnDownloadMd.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
+    setTimeout(() => btnDownloadMd.innerHTML = originalHtml, 2000);
+  }
+}
+
+/**
+ * Handle PDF Export
+ */
+async function handleExportPdf() {
+  if (!lastResult) return;
+
+  const originalHtml = btnExportPdf.innerHTML;
+  btnExportPdf.innerHTML = `<span class="material-symbols-outlined">sync</span> Processing...`;
+
+  try {
+    await exportToPDF(lastResult);
+    btnExportPdf.innerHTML = originalHtml;
+  } catch (e) {
+    console.error(e);
+    btnExportPdf.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
+    setTimeout(() => btnExportPdf.innerHTML = originalHtml, 2000);
   }
 }
 
@@ -299,7 +343,6 @@ async function convertToMarkdown(result) {
         md += `*Embedded Documents:*\n\n`;
         msg.embedded_documents.forEach(doc => {
           md += `### ${doc.title}\n`;
-          // Detect if content is likely code to wrap in code blocks if not already
           if (doc.content.includes('```')) {
             md += `${doc.content}\n\n`;
           } else {
@@ -320,14 +363,36 @@ async function convertToMarkdown(result) {
 /**
  * Handle PDF export via printing
  */
-function exportToPDF(result) {
+async function exportToPDF(result) {
+  // Deep clone result to avoid modifying the original object
+  const data = JSON.parse(JSON.stringify(result));
 
+  // Process images to embed them as Base64
+  if (data.messages && data.messages.length > 0) {
+    for (const msg of data.messages) {
+      if (msg.media && msg.media.length > 0) {
+        for (const m of msg.media) {
+          if (m.type === 'image' || !m.type) {
+            try {
+              const base64 = await urlToBase64(m.url);
+              if (base64) {
+                m.url = base64; // Replace URL with Base64 data
+              }
+            } catch (e) {
+              console.warn("Failed to embed image:", m.url);
+            }
+          }
+        }
+      }
+    }
+  }
 
   // Create a minimal HTML page for printing
   const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="utf-8">
       <title>Chat Export</title>
       <style>
         body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
@@ -337,24 +402,26 @@ function exportToPDF(result) {
         .user { background: #f0f7ff; border-left: 4px solid #2196F3; }
         .model { background: #f9f9f9; border-left: 4px solid #4CAF50; }
         .role { font-weight: bold; margin-bottom: 5px; }
-        pre { background: #eee; padding: 10px; overflow-x: auto; }
-        img { max-width: 100%; height: auto; margin-top: 10px; }
+        pre { background: #eee; padding: 10px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+        img { max-width: 100%; height: auto; margin-top: 10px; display: block; }
         .media-list { margin-top: 10px; font-size: 0.9em; color: #555; }
+        .embedded-doc { margin-top: 10px; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: white; }
         @media print {
           body { max-width: 100%; padding: 0; }
           .message { break-inside: avoid; }
+          pre { white-space: pre-wrap; }
         }
       </style>
     </head>
     <body>
       <h1>Chat Export</h1>
       <div class="meta">
-        <strong>Platform:</strong> ${result.platform}<br>
-        <strong>URL:</strong> ${result.url}<br>
-        <strong>Date:</strong> ${new Date(result.timestamp).toLocaleString()}
+        <strong>Platform:</strong> ${data.platform}<br>
+        <strong>URL:</strong> ${data.url}<br>
+        <strong>Date:</strong> ${new Date(data.timestamp).toLocaleString()}
       </div>
       <div class="chat">
-        ${(result.messages || []).map(msg => `
+        ${(data.messages || []).map(msg => `
           <div class="message ${msg.role}">
             <div class="role">${msg.role.toUpperCase()}</div>
             <div class="content">${msg.content.replace(/\n/g, '<br>')}</div>
@@ -377,9 +444,9 @@ function exportToPDF(result) {
               <div class="media-list">
                 <strong>Embedded Documents:</strong>
                 ${msg.embedded_documents.map(doc => `
-                  <div class="embedded-doc" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                  <div class="embedded-doc">
                     <h4 style="margin: 0 0 10px 0;">${doc.title}</h4>
-                    <pre style="max-height: 300px; overflow-y: auto;">${doc.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                    <pre>${doc.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
                   </div>
                 `).join('')}
               </div>
@@ -388,54 +455,23 @@ function exportToPDF(result) {
         `).join('')}
       </div>
       <script>
-        window.onload = () => { setTimeout(() => { window.print(); }, 500); };
+        window.onload = () => { setTimeout(() => { window.print(); }, 1000); };
       </script>
     </body>
     </html>
   `;
 
-  const blob = new Blob([htmlContent], { type: 'text/html' });
+  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   chrome.tabs.create({ url: url });
 }
 
-/**
- * Handle download button click
- */
-async function handleDownload() {
-  if (!lastResult) return;
-
-  const format = document.getElementById("exportFormat").value;
-  const filename = generateFilename(lastResult); // Base filename
-
-  if (format === 'json') {
-    downloadJSON(lastResult, filename);
-  } else if (format === 'md') {
-    const md = await convertToMarkdown(lastResult);
-    const blob = new Blob([md], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename.replace('.json', '.md');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } else if (format === 'pdf') {
-    exportToPDF(lastResult);
-  }
-
-  const originalText = downloadBtn.textContent;
-  downloadBtn.textContent = "✓ Processing";
-  setTimeout(() => {
-    downloadBtn.textContent = originalText;
-  }, 2000);
-}
-
 // Event listeners
 exportBtn.addEventListener("click", handleExport);
-copyBtn.addEventListener("click", handleCopy);
-downloadBtn.addEventListener("click", handleDownload);
+if (btnCopyJson) btnCopyJson.addEventListener("click", handleCopyJson);
+if (btnDownloadJson) btnDownloadJson.addEventListener("click", handleDownloadJson);
+if (btnDownloadMd) btnDownloadMd.addEventListener("click", handleDownloadMd);
+if (btnExportPdf) btnExportPdf.addEventListener("click", handleExportPdf);
 
 // Initialize popup
 console.log("[AI-Exporter] Popup loaded");

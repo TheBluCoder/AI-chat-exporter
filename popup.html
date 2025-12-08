@@ -2,187 +2,416 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Chat Exporter</title>
+    <title>AI Chat Exporter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
     <style>
+        :root {
+            /* HSL values from the requested design */
+            --primary: hsl(210, 100%, 50%);
+            --primary-hover: hsl(210, 100%, 45%);
+            --primary-foreground: hsl(210, 100%, 98%);
+
+            --background: hsl(240, 6%, 10%);
+            --card: hsl(240, 5%, 15%);
+            --card-hover: hsl(240, 5%, 18%);
+
+            --border: hsl(240, 5%, 20%);
+            --muted: hsl(220, 9%, 60%);
+            --foreground: hsl(0, 0%, 98%);
+
+            --danger: hsl(0, 84%, 60%);
+        }
+
         body {
-            width: 350px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            width: 480px;
+            /* Matched to sample width */
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
             margin: 0;
-            padding: 16px;
-            background-color: #f8f9fa;
-            color: #333;
+            padding: 24px;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
         }
 
-        h1 {
-            font-size: 18px;
-            margin-top: 0;
-            margin-bottom: 16px;
-            text-align: center;
-            color: #1a73e8;
-        }
-
-        .container {
+        /* Base utility classes */
+        .flex {
             display: flex;
+        }
+
+        .flex-col {
             flex-direction: column;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .gap-1 {
+            gap: 4px;
+        }
+
+        .gap-2 {
+            gap: 8px;
+        }
+
+        .gap-3 {
             gap: 12px;
         }
 
-        button {
-            background-color: #1a73e8;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
+        .gap-4 {
+            gap: 16px;
+        }
+
+        .gap-6 {
+            gap: 24px;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+        }
+
+        .text-2xl {
+            font-size: 1.5rem;
+        }
+
+        .font-medium {
             font-weight: 500;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .font-bold {
+            font-weight: 700;
+        }
+
+        .text-muted {
+            color: var(--muted);
+        }
+
+        .text-primary {
+            color: var(--primary);
+        }
+
+        /* Icon reset */
+        .material-symbols-outlined {
+            font-size: 24px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        /* Header */
+        .header h1 {
+            margin: 0;
+        }
+
+        /* Main Export Button */
+        #exportBtn {
+            height: 48px;
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
             transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 600;
         }
 
-        button:hover {
-            background-color: #1557b0;
+        #exportBtn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
         }
 
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        #exportBtn:disabled {
+            opacity: 0.7;
+            cursor: wait;
         }
 
-        .actions {
+        /* Divider */
+        .divider {
+            height: 1px;
+            background-color: var(--border);
+            width: 100%;
+            margin: 24px 0;
+        }
+
+        /* Status Section */
+        #statusContainer {
             display: none;
-            /* Hidden by default */
             flex-direction: column;
             gap: 8px;
-            margin-top: 12px;
-            border-top: 1px solid #ddd;
-            padding-top: 12px;
         }
 
-        .actions.show {
+        /* Only show status container when active or complete */
+        #statusContainer.active {
             display: flex;
         }
 
-        .row {
-            display: flex;
-            gap: 8px;
+        .progress-bar-bg {
+            height: 8px;
+            background-color: var(--border);
+            border-radius: 9999px;
+            overflow: hidden;
+            width: 100%;
         }
 
-        .row>* {
-            flex: 1;
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
         }
 
-        select {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            background-color: white;
+        .progress-bar-fill.indeterminate {
+            width: 50%;
+            animation: indeterminate 1.5s infinite linear;
         }
 
-        #stats {
-            font-size: 13px;
-            color: #2e7d32;
-            background-color: #e8f5e9;
-            padding: 8px;
-            border-radius: 4px;
-            text-align: center;
-            display: none;
+        .progress-bar-fill.complete {
+            width: 100% !important;
         }
 
-        #stats.show {
-            display: block;
-        }
+        @keyframes indeterminate {
+            0% {
+                transform: translateX(-100%);
+            }
 
-        #error {
-            font-size: 13px;
-            color: #c62828;
-            background-color: #ffebee;
-            padding: 8px;
-            border-radius: 4px;
-            text-align: center;
-            display: none;
-        }
-
-        #error.show {
-            display: block;
-        }
-
-        #loading {
-            display: none;
-            text-align: center;
-            padding: 10px;
-            color: #666;
-        }
-
-        #loading.active {
-            display: block;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(0, 0, 0, .1);
-            border-radius: 50%;
-            border-top-color: #1a73e8;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
+            100% {
+                transform: translateX(200%);
             }
         }
 
-        #output {
+        /* Stats Grid */
+        #statsGrid {
             display: none;
-            font-family: monospace;
-            font-size: 11px;
-            white-space: pre-wrap;
-            background: #333;
-            color: #f1f1f1;
-            padding: 8px;
-            border-radius: 4px;
-            max-height: 150px;
-            overflow-y: auto;
-            margin-top: 10px;
+            /* Hidden by default */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        #output.show {
-            display: block;
+        #statsGrid.show {
+            display: grid;
+        }
+
+        .stat-card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* Action Buttons Grid */
+        #actionsGrid {
+            display: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        #actionsGrid.show {
+            display: grid;
+        }
+
+        .action-btn {
+            height: 40px;
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            padding: 0 12px;
+        }
+
+        .action-btn:hover {
+            background-color: var(--card-hover);
+            border-color: var(--muted);
+        }
+
+        .action-btn span.material-symbols-outlined {
+            font-size: 20px;
+            color: var(--muted);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-link {
+            text-decoration: none;
+            color: var(--muted);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-link:hover {
+            color: var(--foreground);
+        }
+
+        .footer-icon-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+        }
+
+        .footer-icon-btn:hover {
+            background-color: var(--card);
+            color: var(--foreground);
+        }
+
+        /* Error Box */
+        #errorBox {
+            display: none;
+            background-color: rgba(239, 68, 68, 0.1);
+            /* Red with opacity */
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        #errorBox.show {
+            display: flex;
         }
     </style>
 </head>
 
 <body>
-    <h1>Gemini Chat Exporter</h1>
 
-    <div class="container">
-        <button id="exportBtn">Export Chat</button>
-
-        <div id="loading">
-            <div class="spinner"></div> Processing...
-        </div>
-
-        <div id="stats"></div>
-        <div id="error"></div>
-
-        <div id="actions" class="actions">
-            <div class="row">
-                <select id="exportFormat">
-                    <option value="json">JSON</option>
-                    <option value="md" selected>Markdown</option>
-                    <option value="pdf">PDF</option>
-                </select>
-                <button id="downloadBtn">Download</button>
+    <div class="flex flex-col gap-6">
+        <!-- Header -->
+        <div class="header flex flex-col gap-1">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary" style="font-size: 32px;">data_object</span>
+                <h1 class="text-xl font-bold">AI Chat Exporter</h1>
             </div>
-            <button id="copyBtn" style="background-color: #5f6368;">Copy JSON to Clipboard</button>
+            <p class="text-sm text-muted">Click the button below to process and export the active conversation.</p>
         </div>
 
-        <div id="output"></div>
+        <!-- Main Action -->
+        <div>
+            <button id="exportBtn">
+                <span class="material-symbols-outlined">download</span>
+                <span>Export Current Page</span>
+            </button>
+        </div>
+
+        <!-- Error Display -->
+        <div id="errorBox">
+            <span class="material-symbols-outlined">error</span>
+            <span id="errorText">Error message here</span>
+        </div>
+
+        <!-- Status / Progress -->
+        <div id="statusContainer">
+            <div class="divider"></div>
+            <div class="flex items-center justify-between">
+                <p id="statusTitle" class="text-sm font-medium">Processing...</p>
+                <p id="statusPercent" class="text-sm font-medium">0%</p>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progressBar" class="progress-bar-fill"></div>
+            </div>
+            <p id="statusSubtitle" class="text-sm text-muted">Analyzing page content...</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div id="statsGrid">
+            <div class="stat-card">
+                <p class="text-sm font-medium text-muted">Messages</p>
+                <p id="statMessages" class="text-2xl font-bold">-</p>
+            </div>
+            <div class="stat-card">
+                <p class="text-sm font-medium text-muted">Media</p>
+                <p id="statMedia" class="text-2xl font-bold">-</p>
+            </div>
+            <div class="stat-card">
+                <p class="text-sm font-medium text-muted">Duration</p>
+                <p id="statDuration" class="text-2xl font-bold">-</p>
+            </div>
+        </div>
+
+        <!-- Actions Grid -->
+        <div id="actionsGrid">
+            <button id="btnCopyJson" class="action-btn">
+                <span class="material-symbols-outlined">content_copy</span>
+                Copy JSON
+            </button>
+            <button id="btnDownloadJson" class="action-btn">
+                <span class="material-symbols-outlined">file_download</span>
+                Download JSON
+            </button>
+            <button id="btnDownloadMd" class="action-btn">
+                <span class="material-symbols-outlined">article</span>
+                Download MD
+            </button>
+            <button id="btnExportPdf" class="action-btn">
+                <span class="material-symbols-outlined">picture_as_pdf</span>
+                Export PDF
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <a href="#" class="footer-link">
+                <span class="material-symbols-outlined" style="font-size: 18px;">help_outline</span>
+                How to use
+            </a>
+            <button class="footer-icon-btn">
+                <span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
+            </button>
+        </div>
     </div>
 
     <script src="popup.js"></script>

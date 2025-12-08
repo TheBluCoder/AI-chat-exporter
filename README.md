@@ -1,18 +1,20 @@
 # AI Chat Exporter - Chrome Extension
 
-A powerful Chrome extension for exporting conversations and media from AI web applications like Google Gemini, ChatGPT, Claude, and other AI chat interfaces.
+A powerful Chrome extension for exporting conversations and media from AI web applications like Google Gemini. It supports both active chats and shared conversations, with robust media handling and multiple export formats.
 
 ## 🎯 Features
 
-- **Smart Content Extraction**: Automatically detects and extracts conversation turns
-- **Media Support**: Captures images, documents, and file links embedded in conversations
+- **Smart Content Extraction**: Automatically detects and extracts conversation turns, handling both structured and linear chat layouts.
+- **Media Support**: Captures images, generated assets, embedded documents, and user-uploaded files.
+- **PDF Export with Embedded Images**: Generates clean, printable PDFs with images embedded directly (no broken links).
+- **Auto-Scroll**: Automatically scrolls through chat history to ensure all messages are loaded before scraping.
 - **Multiple Export Options**: 
-  - Copy to clipboard
+  - Copy JSON to clipboard
   - Download as JSON
-  - View formatted output
-- **Robust Error Handling**: Graceful fallbacks and detailed error reporting
-- **Performance Optimized**: Waits for dynamic content to fully load
-- **Clean UI**: Modern, intuitive popup interface
+  - Download as Markdown
+  - Export as PDF (Print-friendly)
+- **Robust Error Handling**: Graceful fallbacks for various DOM structures.
+- **Clean UI**: Modern popup interface with statistics and progress feedback.
 
 ## 📋 Installation
 
@@ -24,27 +26,32 @@ A powerful Chrome extension for exporting conversations and media from AI web ap
 4. Click "Load unpacked"
 5. Select the extension directory containing `manifest.json`
 
-### Files Required
+### Files Structure
 
 ```
 ai-chat-exporter/
-├── manifest.json       # Extension configuration
-├── scraper.js         # Core scraping logic
-├── content.js         # Message handler
-├── popup.html         # Popup UI
-└── popup.js           # Popup logic
+├── manifest.json         # Extension configuration
+├── popup.html           # Popup UI
+├── popup.js             # Popup logic & PDF generation
+├── content.js           # Message bridge
+├── scraper-router.js    # Directs specific URLs to correct scrapers
+├── gemini-scraper.js    # Specialized scraper for active Gemini chats
+├── gemini-shared.js     # Shared utilities & scraper for shared links
+└── generic-scraper.js   # Fallback scraper for other sites
 ```
 
 ## 🚀 Usage
 
-1. Navigate to an AI chat page (e.g., Gemini, ChatGPT)
+1. Navigate to an AI chat page (e.g., `gemini.google.com`)
 2. Click the extension icon in the toolbar
-3. Click "Export Current Page" button
-4. Wait for extraction to complete
-5. Choose to:
-   - Copy JSON to clipboard
-   - Download as a JSON file
-   - View in the popup
+3. Click **Export Current Page**
+4. Wait for the extension to:
+   - Auto-scroll to load full history
+   - Extract messages and media
+5. Once complete, choose your format:
+   - **JSON**: Full raw data
+   - **Markdown**: Formatted text
+   - **PDF**: Visual document with images
 
 ## 📊 Export Format
 
@@ -53,32 +60,50 @@ The extension exports data in the following JSON structure:
 ```json
 {
   "success": true,
+  "platform": "Google Gemini",
   "messages": [
     {
       "role": "user",
-      "content": "User message text",
-      "media": [
+      "content": "Analyze this code...",
+      "uploaded_files": [
         {
-          "url": "https://example.com/image.png",
-          "type": "image",
-          "name": "Image description"
+           "name": "script.py", 
+           "type": "code", 
+           "source": "user_upload" 
         }
       ],
-      "media_type": ["image"],
       "turn_index": 0
     },
     {
       "role": "model",
-      "content": "AI response text",
-      "media": null,
-      "media_type": null,
+      "content": "Here is the analysis...",
+      "media": [
+        {
+          "url": "https://...",
+          "type": "image",
+          "name": "Chart",
+          "source": "generated"
+        }
+      ],
+      "embedded_documents": [
+        {
+          "title": "Analysis Report",
+          "content": "# Markdown Content...",
+          "type": "text/markdown"
+        }
+      ],
       "turn_index": 0
     }
   ],
-  "count": 2,
+  "statistics": {
+    "total_messages": 2,
+    "user_messages": 1,
+    "model_messages": 1,
+    "uploaded_files": 1,
+    "generated_media": 1
+  },
   "timestamp": "2024-12-07T10:30:00.000Z",
-  "url": "https://gemini.google.com/...",
-  "containerFound": true
+  "url": "https://gemini.google.com/..."
 }
 ```
 
@@ -87,156 +112,59 @@ The extension exports data in the following JSON structure:
 ### Component Overview
 
 #### 1. `manifest.json`
-- Extension configuration and permissions
-- Defines content scripts and popup
-- Manifest V3 compliant
+- Defines permissions (`activeTab`, `scripting`).
+- Injects all scraper scripts into pages to ensure availability.
 
-#### 2. `scraper.js`
-Core scraping functionality:
-- `waitForElement()`: Waits for DOM elements to appear
-- `waitForStableContent()`: Ensures content has finished loading
-- `getMediaType()`: Identifies file types from URLs
-- `extractMedia()`: Extracts images and file links
-- `scrapeGeminiContainer()`: Main scraping orchestrator
-- `runScrape()`: Entry point for scraping
+#### 2. `scraper-router.js`
+- The entry point for scraping.
+- Detects the current URL (Active Chat vs Shared Chat vs Generic).
+- Routes execution to the appropriate scraper function.
 
-#### 3. `content.js`
-Message handling between popup and scraper:
-- Listens for `SCRAPE_PAGE` action
-- Executes scraping asynchronously
-- Returns results to popup
+#### 3. `gemini-scraper.js`
+- Specialized logic for active Gemini chat sessions.
+- Handles complex UI elements like "Immersive Chips" (embedded docs) and File Carousels.
+- Implements `autoScrollToTop` to ensure full history capture.
 
-#### 4. `popup.html`
-User interface with:
-- Export button
-- Loading indicator
-- Statistics display
-- Error handling
-- Action buttons (copy/download)
+#### 4. `gemini-shared.js`
+- Contains utility functions: `waitForElement`, `waitForStableContent`, `extractMedia`.
+- Implements `scrapeGeminiSharedChat` for public shared links.
 
 #### 5. `popup.js`
-UI logic and interactions:
-- Tab communication
-- Clipboard operations
-- File downloads
-- State management
+- Manages the UI state.
+- Handles export format logic.
+- **PDF Generation**: Fetches image URLs and converts them to Base64 to ensure they render correctly in the print view.
 
 ## 🔧 Configuration
 
-Adjust scraping behavior in `scraper.js`:
+Scraping parameters (timeouts, scroll behavior) are defined in `gemini-scraper.js` (for active chats) and `gemini-shared.js` (for shared tools):
 
 ```javascript
-const CONFIG = {
-  ELEMENT_WAIT_TIMEOUT: 15000,  // Max wait for elements (ms)
-  CONTENT_STABLE_MS: 800,       // Content stability duration (ms)
-  CONTENT_TIMEOUT: 10000,       // Max wait for stable content (ms)
-  RENDER_DELAY: 500,            // Initial render delay (ms)
+const GEMINI_CONFIG = {
+  ELEMENT_WAIT_TIMEOUT: 15000,
+  CONTENT_STABLE_MS: 800,
+  MAX_SCROLL_ATTEMPTS: 20, // For auto-scrolling history
+  // ... selectors ...
 };
 ```
 
-## 🎨 Supported Media Types
-
-- **Images**: JPG, PNG, GIF, WebP, SVG, BMP
-- **Documents**: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
-- **Code Files**: PY, JS, TS, Java, C/C++, Go, Rust, etc.
-- **Text Files**: TXT, MD, CSV, JSON, XML, YAML, HTML, CSS
-
 ## 🐛 Troubleshooting
 
-### Extension Not Working
+### Images not showing in PDF?
+The extension attempts to fetch images and embed them. If an image fails to load, it might be due to stricter CORS policies on the specific asset. The PDF will still generate with a placeholder or link.
 
-1. **Refresh the page**: Content scripts load on page load
-2. **Check permissions**: Ensure extension has access to the site
-3. **View console**: Open DevTools and check for errors
-4. **Reload extension**: Go to `chrome://extensions/` and reload
-
-### No Response from Page
-
-- The page may not have loaded the content script
-- Try refreshing the page and waiting a few seconds
-- Check if the page URL is accessible (not `chrome://` pages)
-
-### Extraction Failed
-
-- Page structure may differ from expected
-- Check console for specific error messages
-- Some sites may use different HTML structures
-
-## 🔍 Debugging
-
-Enable verbose logging:
-
-```javascript
-// In scraper.js, all logs are prefixed with [AI-Exporter]
-console.log("[AI-Exporter] Custom debug message");
-```
-
-Check the console in:
-- **Popup**: Right-click extension icon → Inspect popup
-- **Content Script**: Open DevTools on the target page
+### "Timeout waiting for selector"
+The page structure might have changed. Check the console logs (right-click page -> Inspect -> Console) for `[AI-Exporter]` messages.
 
 ## 📝 Development
 
-### Making Changes
-
-1. Edit source files
-2. Go to `chrome://extensions/`
-3. Click reload button on the extension
-4. Refresh the target page
-5. Test changes
-
-### Adding New Selectors
-
-To support additional AI chat platforms, modify `scrapeGeminiContainer()`:
-
-```javascript
-// Add new selector patterns
-const container = await waitForElement("your-selector-here");
-```
-
-## 🔐 Privacy & Security
-
-- **No data transmission**: All processing happens locally
-- **No external connections**: Extension doesn't send data anywhere
-- **Minimal permissions**: Only requires `activeTab` and `scripting`
-- **Open source**: Code is fully auditable
-
-## 📄 License
-
-This project is open source. Feel free to modify and distribute.
+### Adding a New Platform
+1. Create a new scraper file (e.g., `claude-scraper.js`).
+2. Add it to `manifest.json`.
+3. Update `scraper-router.js` to detect the URL pattern and call your new scraper.
+4. Implement the scraper function following the pattern in `gemini-scraper.js`.
 
 ## 🤝 Contributing
+Contributions are welcome! Please open an issue or submit a PR.
 
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 🆘 Support
-
-For issues, questions, or feature requests:
-- Check existing issues on GitHub
-- Open a new issue with detailed information
-- Include console logs and error messages
-
-## 🔄 Version History
-
-### v1.1.0 (Current)
-- Optimized scraping performance
-- Enhanced error handling
-- Improved UI/UX
-- Added copy and download features
-- Better media extraction
-- Comprehensive documentation
-
-### v1.0.0
-- Initial release
-- Basic scraping functionality
-- Simple popup interface
-
----
-
-**Note**: This extension is designed for personal use and data portability. Always respect the terms of service of the websites you're scraping from.
+## 📄 License
+Open Source.
