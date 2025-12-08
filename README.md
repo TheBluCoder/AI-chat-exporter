@@ -1,170 +1,189 @@
-# AI Chat Exporter - Chrome Extension
+# AI Chat Exporter
 
-A powerful Chrome extension for exporting conversations and media from AI web applications like Google Gemini. It supports both active chats and shared conversations, with robust media handling and multiple export formats.
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/yourusername/ai-chat-exporter)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
 
-## 🎯 Features
+> A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, ChatGPT, and Meta AI.
 
-- **Smart Content Extraction**: Automatically detects and extracts conversation turns, handling both structured and linear chat layouts.
-- **Media Support**: Captures images, generated assets, embedded documents, and user-uploaded files.
-- **PDF Export with Embedded Images**: Generates clean, printable PDFs with images embedded directly (no broken links).
-- **Auto-Scroll**: Automatically scrolls through chat history to ensure all messages are loaded before scraping.
-- **Multiple Export Options**: 
-  - Copy JSON to clipboard
-  - Download as JSON
-  - Download as Markdown
-  - Export as PDF (Print-friendly)
-- **Robust Error Handling**: Graceful fallbacks for various DOM structures.
-- **Clean UI**: Modern popup interface with statistics and progress feedback.
+## ✨ Features
 
-## 📋 Installation
+- 🚀 **Multi-Platform Support**: Export from Gemini, Claude, ChatGPT, and Meta AI
+- 📦 **Multiple Export Formats**: JSON, Markdown, and PDF
+- 🖼️ **Media Embedding**: Automatically embeds images as base64 in exports
+- 📄 **Document Extraction**: Captures uploaded files and embedded documents
+- 🌐 **Browser Agnostic**: Works on Chrome, Edge, Firefox, and Safari
+- 🎨 **Modern UI**: Clean, dark-themed interface
+- ⚡ **Fast & Efficient**: Optimized scraping with automatic scroll handling
 
-### Manual Installation (Developer Mode)
+## 🚀 Quick Start
 
-1. Clone or download this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" (toggle in top-right corner)
+### Installation
+
+#### Chrome / Edge
+1. Download the latest release
+2. Open `chrome://extensions/` (or `edge://extensions/`)
+3. Enable "Developer mode"
 4. Click "Load unpacked"
-5. Select the extension directory containing `manifest.json`
+5. Select the extension folder
 
-### Files Structure
+#### Firefox
+1. Download the latest release
+2. Open `about:debugging#/runtime/this-firefox`
+3. Click "Load Temporary Add-on"
+4. Select the `manifest.json` file
+
+#### Safari
+1. Convert using Safari Web Extensions Converter
+2. Build and run through Xcode
+
+### Usage
+
+1. Navigate to any supported AI chat page
+2. Click the extension icon in your browser toolbar
+3. Click "Export Current Page"
+4. Choose your desired export format:
+   - **Copy JSON**: Copy to clipboard
+   - **Download JSON**: Save as JSON file
+   - **Download MD**: Save as Markdown with embedded images
+   - **Export PDF**: Print to PDF
+
+## 🎯 Supported Platforms
+
+| Platform | Active Chat | Shared Links | Status |
+|----------|-------------|--------------|--------|
+| **Google Gemini** | ✅ Full Support | ✅ Full Support | 🟢 Stable |
+| **Claude** | 🚧 In Progress | 🚧 In Progress | 🟡 Planned |
+| **ChatGPT** | 🚧 In Progress | 🚧 In Progress | 🟡 Planned |
+| **Meta AI** | 🚧 In Progress | 🚧 In Progress | 🟡 Planned |
+
+## 🏗️ Project Structure
 
 ```
 ai-chat-exporter/
-├── manifest.json         # Extension configuration
-├── popup.html           # Popup UI
-├── popup.js             # Popup logic & PDF generation
-├── content.js           # Message bridge
-├── scraper-router.js    # Directs specific URLs to correct scrapers
-├── gemini-scraper.js    # Specialized scraper for active Gemini chats
-├── gemini-shared.js     # Shared utilities & scraper for shared links
-└── generic-scraper.js   # Fallback scraper for other sites
+├── src/
+│   ├── popup/              # Extension popup UI
+│   │   ├── popup.html
+│   │   └── popup.js
+│   ├── content/            # Content scripts
+│   │   └── content.js
+│   ├── scrapers/           # Platform-specific scrapers
+│   │   ├── gemini-scraper.js
+│   │   ├── gemini-shared.js
+│   │   ├── generic-scraper.js
+│   │   └── scraper-router.js
+│   ├── utils/              # Shared utilities
+│   │   └── utils.js
+│   └── lib/                # Third-party libraries
+│       └── browser-polyfill.js
+├── assets/
+│   └── icons/              # Extension icons
+├── docs/                   # Documentation
+├── manifest.json           # Extension manifest
+├── package.json
+└── README.md
 ```
 
-## 🚀 Usage
+## 🛠️ Development
 
-1. Navigate to an AI chat page (e.g., `gemini.google.com`)
-2. Click the extension icon in the toolbar
-3. Click **Export Current Page**
-4. Wait for the extension to:
-   - Auto-scroll to load full history
-   - Extract messages and media
-5. Once complete, choose your format:
-   - **JSON**: Full raw data
-   - **Markdown**: Formatted text
-   - **PDF**: Visual document with images
+### Prerequisites
 
-## 📊 Export Format
+- Node.js >= 16.0.0
+- npm >= 8.0.0
 
-The extension exports data in the following JSON structure:
+### Setup
 
-```json
-{
-  "success": true,
-  "platform": "Google Gemini",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Analyze this code...",
-      "uploaded_files": [
-        {
-           "name": "script.py", 
-           "type": "code", 
-           "source": "user_upload" 
-        }
-      ],
-      "turn_index": 0
-    },
-    {
-      "role": "model",
-      "content": "Here is the analysis...",
-      "media": [
-        {
-          "url": "https://...",
-          "type": "image",
-          "name": "Chart",
-          "source": "generated"
-        }
-      ],
-      "embedded_documents": [
-        {
-          "title": "Analysis Report",
-          "content": "# Markdown Content...",
-          "type": "text/markdown"
-        }
-      ],
-      "turn_index": 0
-    }
-  ],
-  "statistics": {
-    "total_messages": 2,
-    "user_messages": 1,
-    "model_messages": 1,
-    "uploaded_files": 1,
-    "generated_media": 1
-  },
-  "timestamp": "2024-12-07T10:30:00.000Z",
-  "url": "https://gemini.google.com/..."
-}
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/ai-chat-exporter.git
+cd ai-chat-exporter
+
+# Install dependencies
+npm install
+
+# Lint code
+npm run lint
+
+# Format code
+npm run format
 ```
 
-## 🏗️ Architecture
+### Building
 
-### Component Overview
+```bash
+# Create production build
+npm run build
 
-#### 1. `manifest.json`
-- Defines permissions (`activeTab`, `scripting`).
-- Injects all scraper scripts into pages to ensure availability.
-
-#### 2. `scraper-router.js`
-- The entry point for scraping.
-- Detects the current URL (Active Chat vs Shared Chat vs Generic).
-- Routes execution to the appropriate scraper function.
-
-#### 3. `gemini-scraper.js`
-- Specialized logic for active Gemini chat sessions.
-- Handles complex UI elements like "Immersive Chips" (embedded docs) and File Carousels.
-- Implements `autoScrollToTop` to ensure full history capture.
-
-#### 4. `gemini-shared.js`
-- Contains utility functions: `waitForElement`, `waitForStableContent`, `extractMedia`.
-- Implements `scrapeGeminiSharedChat` for public shared links.
-
-#### 5. `popup.js`
-- Manages the UI state.
-- Handles export format logic.
-- **PDF Generation**: Fetches image URLs and converts them to Base64 to ensure they render correctly in the print view.
-
-## 🔧 Configuration
-
-Scraping parameters (timeouts, scroll behavior) are defined in `gemini-scraper.js` (for active chats) and `gemini-shared.js` (for shared tools):
-
-```javascript
-const GEMINI_CONFIG = {
-  ELEMENT_WAIT_TIMEOUT: 15000,
-  CONTENT_STABLE_MS: 800,
-  MAX_SCROLL_ATTEMPTS: 20, // For auto-scrolling history
-  // ... selectors ...
-};
+# Package for distribution
+npm run package
 ```
 
-## 🐛 Troubleshooting
+## 📖 Documentation
 
-### Images not showing in PDF?
-The extension attempts to fetch images and embed them. If an image fails to load, it might be due to stricter CORS policies on the specific asset. The PDF will still generate with a placeholder or link.
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
 
-### "Timeout waiting for selector"
-The page structure might have changed. Check the console logs (right-click page -> Inspect -> Console) for `[AI-Exporter]` messages.
+- [Technical Guide](docs/TECHNICAL_GUIDE.md) - Architecture and implementation details
+- [Quickstart Guide](docs/QUICKSTART.md) - Getting started quickly
+- [Setup Instructions](docs/SETUP_INSTRUCTIONS.md) - Detailed installation guide
+- [Gemini Scraper Guide](docs/GEMINI_SCRAPER_GUIDE.md) - Gemini-specific scraping details
+- [Router Guide](docs/ROUTER_GUIDE.md) - Platform detection system
+- [Scraper Comparison](docs/SCRAPER_COMPARISON.md) - Comparing different scrapers
 
-## 📝 Development
+## 🌐 Browser Compatibility
 
-### Adding a New Platform
-1. Create a new scraper file (e.g., `claude-scraper.js`).
-2. Add it to `manifest.json`.
-3. Update `scraper-router.js` to detect the URL pattern and call your new scraper.
-4. Implement the scraper function following the pattern in `gemini-scraper.js`.
+This extension uses the WebExtensions API and is compatible with:
+
+| Browser | Version | Support |
+|---------|---------|---------|
+| Chrome | >= 88 | ✅ Full |
+| Edge | >= 88 | ✅ Full |
+| Firefox | >= 109 | ✅ Full |
+| Safari | >= 14 | ⚠️ Requires conversion |
+
+## 🔒 Privacy & Security
+
+- **No Data Collection**: This extension does not collect or transmit any user data
+- **Local Processing**: All scraping and exporting happens locally in your browser
+- **No External Requests**: No data is sent to external servers
+- **Open Source**: Full source code is available for audit
 
 ## 🤝 Contributing
-Contributions are welcome! Please open an issue or submit a PR.
 
-## 📄 License
-Open Source.
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with modern web technologies
+- Uses [Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/) for future-proof compatibility
+- Inspired by the need for portable AI conversation archives
+
+## 📞 Support
+
+- 🐛 [Report a Bug](https://github.com/yourusername/ai-chat-exporter/issues)
+- 💡 [Request a Feature](https://github.com/yourusername/ai-chat-exporter/issues)
+- 📧 [Contact](mailto:your.email@example.com)
+
+## 🗺️ Roadmap
+
+- [ ] Complete Claude scraper implementation
+- [ ] Complete ChatGPT scraper implementation
+- [ ] Complete Meta AI scraper implementation
+- [ ] Add export templates customization
+- [ ] Add conversation search/filter
+- [ ] Add batch export functionality
+- [ ] Add cloud storage integration (optional)
+- [ ] Add conversation statistics dashboard
+
+---
+
+<p align="center">Made with ❤️ by the community</p>

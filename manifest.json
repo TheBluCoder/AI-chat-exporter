@@ -6,22 +6,28 @@
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/popup.html",
     "default_title": "Export AI Conversation"
-   
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": [
-        "gemini-shared.js",
-        "gemini-scraper.js",
-        "scraper-router.js",
-        "content.js",
-        "generic-scraper.js"
+        "src/lib/browser-polyfill.js",
+        "src/utils/utils.js",
+        "src/scrapers/gemini-shared.js",
+        "src/scrapers/gemini-scraper.js",
+        "src/scrapers/scraper-router.js",
+        "src/content/content.js",
+        "src/scrapers/generic-scraper.js"
       ],
       "run_at": "document_idle"
     }
-  ]
-
+  ],
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  }
 }
