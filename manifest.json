@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "AI Chat Exporter",
+  "description": "Export conversations from AI platforms (Gemini, Claude, ChatGPT, Meta AI)",
+  "version": "2.0.0",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Export AI Conversation"
+   
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "gemini-shared.js",
+        "gemini-scraper.js",
+        "scraper-router.js",
+        "content.js",
+        "generic-scraper.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+
+}
