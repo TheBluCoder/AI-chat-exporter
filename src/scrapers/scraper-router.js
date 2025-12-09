@@ -10,21 +10,21 @@ const PLATFORM_CONFIG = {
     scraper: 'gemini',
     name: 'Google Gemini (Active Chat)',
   },
-  
+
   // Google Gemini - Shared Conversation (use generic scraper)
   GEMINI_SHARED: {
     pattern: /^https:\/\/gemini\.google\.com\/share\//,
     scraper: 'gemini-shared',
     name: 'Google Gemini (Shared)',
   },
-  
+
   // Claude - Active Chat (will use specialized scraper - to be implemented)
   CLAUDE_CHAT: {
     pattern: /^https:\/\/claude\.ai\/chat\//,
     scraper: 'claude',
     name: 'Claude (Active Chat)',
   },
-  
+
   // ChatGPT - Main domain
   CHATGPT_CHAT: {
     pattern: /^https:\/\/chatgpt\.com\//,
@@ -38,14 +38,14 @@ const PLATFORM_CONFIG = {
     scraper: 'chatgpt',
     name: 'ChatGPT',
   },
-  
+
   // Meta AI - Active Chat (will use specialized scraper - to be implemented)
   METAAI_CHAT: {
     pattern: /^https:\/\/www\.meta\.ai\//,
     scraper: 'metaai',
     name: 'Meta AI (Active Chat)',
   },
-  
+
   // Fallback - use generic scraper
   GENERIC: {
     pattern: /.*/,
@@ -60,7 +60,7 @@ const PLATFORM_CONFIG = {
  */
 function detectPlatform() {
   const currentUrl = window.location.href;
-  
+
   // Check each platform pattern in order
   for (const [key, config] of Object.entries(PLATFORM_CONFIG)) {
     if (config.pattern.test(currentUrl)) {
@@ -68,7 +68,7 @@ function detectPlatform() {
       return config;
     }
   }
-  
+
   // Fallback to generic
   console.log('[Scraper-Router] No specific platform detected, using generic scraper');
   return PLATFORM_CONFIG.GENERIC;
@@ -80,7 +80,7 @@ function detectPlatform() {
  */
 function getScraperFunction() {
   const platform = detectPlatform();
-  
+
   switch (platform.scraper) {
     case 'gemini':
       // Check if Gemini scraper is loaded
@@ -90,7 +90,7 @@ function getScraperFunction() {
       }
       console.warn('[Scraper-Router] Gemini scraper not loaded, falling back to generic');
       return scrapeGeneric;
-      
+
     case 'claude':
       // Check if Claude scraper is loaded
       if (typeof scrapeClaudeChat !== 'undefined') {
@@ -99,7 +99,7 @@ function getScraperFunction() {
       }
       console.warn('[Scraper-Router] Claude scraper not available yet, using generic');
       return scrapeGeneric;
-      
+
     case 'chatgpt':
       // Check if ChatGPT scraper is loaded
       if (typeof scrapeChatGPT !== 'undefined') {
@@ -108,7 +108,7 @@ function getScraperFunction() {
       }
       console.warn('[Scraper-Router] ChatGPT scraper not available yet, using generic');
       return scrapeGeneric;
-      
+
     case 'metaai':
       // Check if Meta AI scraper is loaded
       if (typeof scrapeMetaAI !== 'undefined') {
@@ -117,7 +117,7 @@ function getScraperFunction() {
       }
       console.warn('[Scraper-Router] Meta AI scraper not available yet, using generic');
       return scrapeGeneric;
-      
+
     case 'gemini-shared':
     default:
       if (typeof scrapeGeminiSharedChat !== 'undefined') {
@@ -136,22 +136,22 @@ function getScraperFunction() {
 async function runScrape() {
   const platform = detectPlatform();
   console.log(`[Scraper-Router] Starting scrape for ${platform.name} at:`, location.href);
-  
+
   try {
     // Get the appropriate scraper function
     const scraperFunction = getScraperFunction();
-    
+
     // Execute the scraping
     const result = await scraperFunction();
-    
+
     // Add platform info to result
     if (result.success) {
       result.detected_platform = platform.name;
       result.scraper_type = platform.scraper;
     }
-    
+
     console.log('[Scraper-Router] Scrape completed:', result.success ? 'SUCCESS' : 'FAILED');
-    
+
     // Send message to extension runtime
     try {
       if (typeof browserAPI !== "undefined" && browserAPI.runtime?.sendMessage) {
@@ -167,15 +167,15 @@ async function runScrape() {
     } catch (error) {
       console.warn("[Scraper-Router] Failed to send runtime message:", error);
     }
-    
+
     // Post message to window for debugging (disabled - postMessage can't clone Promises)
     // window.postMessage({ type: "SCRAPE_RESULT", payload: result, platform: platform.name }, "*");
 
     return result;
-    
+
   } catch (error) {
     console.error("[Scraper-Router] Fatal error:", error);
-    
+
     return {
       success: false,
       error: error.message,

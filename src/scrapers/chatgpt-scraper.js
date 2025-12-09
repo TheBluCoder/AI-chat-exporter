@@ -136,6 +136,7 @@ async function extractUploadedFiles(turnElement) {
 
     for (const iframe of fileIframes) {
       const fileUrl = iframe.src;
+      console.log(`[ChatGPT-Scraper] Found file iframe: ${fileUrl}`);
       const fileName = extractFileNameFromUrl(fileUrl) || 'unknown_file';
 
       console.log(`[ChatGPT-Scraper] Found file: ${fileName} at ${fileUrl}`);
@@ -205,6 +206,7 @@ async function fetchFileContent(fileUrl, fileName, fileType) {
     if (fileType === 'text' || fileName.match(/\.(md|txt|json|csv|xml|html|css|js)$/i)) {
       // Text files - extract as plain text
       const textContent = await response.text();
+      console.log(`[ChatGPT-Scraper] Fetched text content: ${textContent}`);
       return {
         content: textContent,
         encoding: 'text',
