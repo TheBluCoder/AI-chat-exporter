@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to AI Chat Exporter! This document provides guidelines and instructions for contributing.
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
 - [Getting Started](#getting-started)
@@ -12,14 +12,14 @@ Thank you for your interest in contributing to AI Chat Exporter! This document p
 - [Testing](#testing)
 - [Submitting Changes](#submitting-changes)
 
-## 🤝 Code of Conduct
+## Code of Conduct
 
 - Be respectful and inclusive
 - Provide constructive feedback
 - Focus on what is best for the community
 - Show empathy towards other community members
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -43,7 +43,7 @@ npm install
 # Firefox: Navigate to about:debugging, click "Load Temporary Add-on"
 ```
 
-## 💻 Development Workflow
+## Development Workflow
 
 ### Project Structure
 
@@ -84,7 +84,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 - `test:` - Adding or updating tests
 - `chore:` - Maintenance tasks
 
-## 📝 Coding Standards
+## Coding Standards
 
 ### JavaScript Style Guide
 
@@ -124,7 +124,7 @@ function extractMessages(container) {
 - **Constants**: UPPER_SNAKE_CASE (`MAX_RETRIES`)
 - **Classes**: PascalCase (`MessageExtractor`)
 
-## 🔧 Adding New Scrapers
+## Adding New Scrapers
 
 To add support for a new AI platform:
 
@@ -217,7 +217,7 @@ Add your scraper to `manifest.json`:
     "js": [
       "src/lib/browser-polyfill.js",
       "src/utils/utils.js",
-      "src/scrapers/platform-name-scraper.js",  // Add here
+      "src/scrapers/platform-name-scraper.js",
       "src/scrapers/scraper-router.js",
       // ... other scripts
     ]
@@ -233,7 +233,7 @@ Create documentation in `docs/PLATFORM_NAME_SCRAPER_GUIDE.md` explaining:
 - Selectors used
 - Known limitations
 
-## 🧪 Testing
+## Testing
 
 ### Manual Testing Checklist
 
@@ -258,7 +258,7 @@ Create documentation in `docs/PLATFORM_NAME_SCRAPER_GUIDE.md` explaining:
    - No console errors
    - Export formats work
 
-## 📤 Submitting Changes
+## Submitting Changes
 
 ### Pull Request Process
 
@@ -295,13 +295,13 @@ Add screenshots here
 - [ ] No new warnings
 ```
 
-## 🆘 Getting Help
+## Getting Help
 
 - Check existing [Issues](https://github.com/yourusername/ai-chat-exporter/issues)
 - Read the [Documentation](docs/)
 - Ask in [Discussions](https://github.com/yourusername/ai-chat-exporter/discussions)
 
-## 📚 Resources
+## Resources
 
 - [Chrome Extension Documentation](https://developer.chrome.com/docs/extensions/)
 - [WebExtensions API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
@@ -309,4 +309,4 @@ Add screenshots here
 
 ---
 
-Thank you for contributing to AI Chat Exporter! 🎉
+Thank you for contributing to AI Chat Exporter!

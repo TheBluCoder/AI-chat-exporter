@@ -13,7 +13,7 @@ const UTILS_CONFIG = {
   CONTENT_TIMEOUT: 10000,
   RENDER_DELAY: 500,
   SCROLL_DELAY: 1500,
-  MAX_SCROLL_ATTEMPTS: 20,
+  MAX_SCROLL_ATTEMPTS: 10,
 };
 
 // ============================================================================
@@ -302,30 +302,41 @@ async function convertToMarkdown(result) {
 
   if (result.messages && result.messages.length > 0) {
     for (const msg of result.messages) {
-      const role = msg.role === 'user' ? '👤 **User**' : '🤖 **Model**';
+      const role = msg.role === 'user' ? '👤 **User**' : (msg.role === 'assistant' ? '🤖 **Assistant**' : '🤖 **Model**');
       md += `${role}:\n\n`;
-      md += `${msg.content}\n\n`;
 
-      // Handle uploaded files
-      if (msg.uploaded_files && msg.uploaded_files.length > 0) {
+      // Handle both field name formats (content vs text)
+      const messageText = msg.content || msg.text || '';
+      md += `${messageText}\n\n`;
+
+      // Handle uploaded files (both formats: uploaded_files vs uploadedFiles)
+      const uploadedFiles = msg.uploaded_files || msg.uploadedFiles;
+      if (uploadedFiles && uploadedFiles.length > 0) {
         md += `*Uploaded Files:*\n`;
-        msg.uploaded_files.forEach(file => {
+        uploadedFiles.forEach(file => {
           md += `- [${file.type.toUpperCase()}] ${file.name}\n`;
         });
         md += `\n`;
       }
 
-      // Handle generated media with base64 embedding
-      if (msg.media && msg.media.length > 0) {
+      // Handle generated media with base64 embedding (both formats: media vs images)
+      const media = msg.media || msg.images;
+      if (media && media.length > 0) {
         md += `*Media:*\n`;
-        for (const m of msg.media) {
-          let mediaUrl = m.url;
-          // Convert image to base64 if possible
-          if (m.type === 'image' || !m.type) {
-            const base64 = await urlToBase64(m.url);
+        for (const m of media) {
+          // Handle different image object formats
+          let mediaUrl = m.url || m.src;
+          const base64Data = m.base64;
+
+          // Use base64 if available, otherwise try to convert
+          if (base64Data) {
+            mediaUrl = base64Data;
+          } else if (mediaUrl && (m.type === 'image' || !m.type)) {
+            const base64 = await urlToBase64(mediaUrl);
             if (base64) mediaUrl = base64;
           }
-          md += `![${m.name || 'Image'}](${mediaUrl})\n`;
+
+          md += `![${m.name || m.alt || 'Image'}](${mediaUrl})\n`;
         }
         md += `\n`;
       }
@@ -365,19 +376,25 @@ async function exportToPDF(result) {
   // Deep clone result to avoid modifying the original object
   const data = JSON.parse(JSON.stringify(result));
 
-  // Process images to embed them as Base64
+  // Process images to embed them as Base64 (handle both formats)
   if (data.messages && data.messages.length > 0) {
     for (const msg of data.messages) {
-      if (msg.media && msg.media.length > 0) {
-        for (const m of msg.media) {
-          if (m.type === 'image' || !m.type) {
+      const media = msg.media || msg.images;
+      if (media && media.length > 0) {
+        for (const m of media) {
+          // Skip if already has base64
+          if (m.base64) continue;
+
+          const url = m.url || m.src;
+          if (url && (m.type === 'image' || !m.type)) {
             try {
-              const base64 = await urlToBase64(m.url);
+              const base64 = await urlToBase64(url);
               if (base64) {
                 m.url = base64;
+                m.src = base64;
               }
             } catch (e) {
-              console.warn("[Utils] Failed to embed image:", m.url);
+              console.warn("[Utils] Failed to embed image:", url);
             }
           }
         }
@@ -399,6 +416,7 @@ async function exportToPDF(result) {
         .message { margin-bottom: 20px; padding: 15px; border-radius: 8px; }
         .user { background: #f0f7ff; border-left: 4px solid #2196F3; }
         .model { background: #f9f9f9; border-left: 4px solid #4CAF50; }
+        .assistant { background: #f9f9f9; border-left: 4px solid #4CAF50; }
         .role { font-weight: bold; margin-bottom: 5px; }
         pre { background: #eee; padding: 10px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
         img { max-width: 100%; height: auto; margin-top: 10px; display: block; }
@@ -419,22 +437,31 @@ async function exportToPDF(result) {
         <strong>Date:</strong> ${new Date(data.timestamp).toLocaleString()}
       </div>
       <div class="chat">
-        ${(data.messages || []).map(msg => `
+        ${(data.messages || []).map(msg => {
+          const messageText = (msg.content || msg.text || '').replace(/\n/g, '<br>');
+          const uploadedFiles = msg.uploaded_files || msg.uploadedFiles;
+          const media = msg.media || msg.images;
+
+          return `
           <div class="message ${msg.role}">
             <div class="role">${msg.role.toUpperCase()}</div>
-            <div class="content">${msg.content.replace(/\n/g, '<br>')}</div>
+            <div class="content">${messageText}</div>
 
-            ${msg.uploaded_files ? `
+            ${uploadedFiles && uploadedFiles.length > 0 ? `
               <div class="media-list">
                 <strong>Uploaded:</strong>
-                <ul>${msg.uploaded_files.map(f => `<li>${f.name} (${f.type})</li>`).join('')}</ul>
+                <ul>${uploadedFiles.map(f => `<li>${f.name} (${f.type})</li>`).join('')}</ul>
               </div>
             ` : ''}
 
-            ${msg.media ? `
+            ${media && media.length > 0 ? `
               <div class="media-list">
                 <strong>Media:</strong><br>
-                ${msg.media.map(m => m.type === 'image' ? `<img src="${m.url}" alt="${m.name || ''}">` : `<a href="${m.url}">${m.name || 'Link'}</a>`).join('<br>')}
+                ${media.map(m => {
+                  const imgSrc = m.url || m.src || m.base64;
+                  const imgName = m.name || m.alt || '';
+                  return m.type === 'image' || !m.type ? `<img src="${imgSrc}" alt="${imgName}">` : `<a href="${imgSrc}">${imgName || 'Link'}</a>`;
+                }).join('<br>')}
               </div>
             ` : ''}
 
@@ -450,7 +477,8 @@ async function exportToPDF(result) {
               </div>
             ` : ''}
           </div>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
       <script>
         window.onload = () => { setTimeout(() => { window.print(); }, 1000); };

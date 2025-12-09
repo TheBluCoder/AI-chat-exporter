@@ -90,7 +90,12 @@ function showSuccess(result, durationMs) {
   // Update Stats
   const messageCount = result.count || (result.messages ? result.messages.length : 0);
   const mediaCount = result.statistics?.generated_media + result.statistics?.uploaded_files ||
-    (result.messages || []).reduce((acc, msg) => acc + (msg.media ? msg.media.length : 0), 0);
+    (result.messages || []).reduce((acc, msg) => {
+      // Handle both formats: media/images for images, uploaded_files/uploadedFiles for uploads
+      const media = msg.media || msg.images || [];
+      const uploads = msg.uploaded_files || msg.uploadedFiles || [];
+      return acc + media.length + uploads.length;
+    }, 0);
 
   statMessages.textContent = messageCount;
   statMedia.textContent = mediaCount;

@@ -4,19 +4,19 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
 
-> A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, ChatGPT, and Meta AI.
+A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, ChatGPT, and Meta AI.
 
-## ✨ Features
+## Features
 
-- 🚀 **Multi-Platform Support**: Export from Gemini, Claude, ChatGPT, and Meta AI
-- 📦 **Multiple Export Formats**: JSON, Markdown, and PDF
-- 🖼️ **Media Embedding**: Automatically embeds images as base64 in exports
-- 📄 **Document Extraction**: Captures uploaded files and embedded documents
-- 🌐 **Browser Agnostic**: Works on Chrome, Edge, Firefox, and Safari
-- 🎨 **Modern UI**: Clean, dark-themed interface
-- ⚡ **Fast & Efficient**: Optimized scraping with automatic scroll handling
+- **Multi-Platform Support**: Export from Gemini, Claude, ChatGPT, and Meta AI
+- **Multiple Export Formats**: JSON, Markdown, and PDF
+- **Media Embedding**: Automatically embeds images as base64 in exports
+- **Document Extraction**: Captures uploaded files and embedded documents
+- **Browser Agnostic**: Works on Chrome, Edge, Firefox, and Safari
+- **Modern UI**: Clean, dark-themed interface
+- **Fast & Efficient**: Optimized scraping with automatic scroll handling
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -48,16 +48,16 @@
    - **Download MD**: Save as Markdown with embedded images
    - **Export PDF**: Print to PDF
 
-## 🎯 Supported Platforms
+## Supported Platforms
 
 | Platform | Active Chat | Shared Links | Status |
 |----------|-------------|--------------|--------|
-| **Google Gemini** | ✅ Full Support | ✅ Full Support | 🟢 Stable |
-| **Claude** | 🚧 In Progress | 🚧 In Progress | 🟡 Planned |
-| **ChatGPT** | 🚧 In Progress | 🚧 In Progress | 🟡 Planned |
-| **Meta AI** | 🚧 In Progress | 🚧 In Progress | 🟡 Planned |
+| **Google Gemini** | Full Support | Full Support | Stable |
+| **ChatGPT** | Beta | Not Yet | Beta |
+| **Claude** | Planned | Planned | Planned |
+| **Meta AI** | Planned | Planned | Planned |
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 ai-chat-exporter/
@@ -70,6 +70,7 @@ ai-chat-exporter/
 │   ├── scrapers/           # Platform-specific scrapers
 │   │   ├── gemini-scraper.js
 │   │   ├── gemini-shared.js
+│   │   ├── chatgpt-scraper.js
 │   │   ├── generic-scraper.js
 │   │   └── scraper-router.js
 │   ├── utils/              # Shared utilities
@@ -84,7 +85,7 @@ ai-chat-exporter/
 └── README.md
 ```
 
-## 🛠️ Development
+## Development
 
 ### Prerequisites
 
@@ -118,7 +119,7 @@ npm run build
 npm run package
 ```
 
-## 📖 Documentation
+## Documentation
 
 Comprehensive documentation is available in the [`docs/`](docs/) directory:
 
@@ -129,25 +130,25 @@ Comprehensive documentation is available in the [`docs/`](docs/) directory:
 - [Router Guide](docs/ROUTER_GUIDE.md) - Platform detection system
 - [Scraper Comparison](docs/SCRAPER_COMPARISON.md) - Comparing different scrapers
 
-## 🌐 Browser Compatibility
+## Browser Compatibility
 
 This extension uses the WebExtensions API and is compatible with:
 
 | Browser | Version | Support |
 |---------|---------|---------|
-| Chrome | >= 88 | ✅ Full |
-| Edge | >= 88 | ✅ Full |
-| Firefox | >= 109 | ✅ Full |
-| Safari | >= 14 | ⚠️ Requires conversion |
+| Chrome | >= 88 | Full |
+| Edge | >= 88 | Full |
+| Firefox | >= 109 | Full |
+| Safari | >= 14 | Requires conversion |
 
-## 🔒 Privacy & Security
+## Privacy & Security
 
 - **No Data Collection**: This extension does not collect or transmit any user data
 - **Local Processing**: All scraping and exporting happens locally in your browser
 - **No External Requests**: No data is sent to external servers
 - **Open Source**: Full source code is available for audit
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -157,26 +158,29 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with modern web technologies
 - Uses [Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/) for future-proof compatibility
 - Inspired by the need for portable AI conversation archives
 
-## 📞 Support
+## Support
 
-- 🐛 [Report a Bug](https://github.com/yourusername/ai-chat-exporter/issues)
-- 💡 [Request a Feature](https://github.com/yourusername/ai-chat-exporter/issues)
-- 📧 [Contact](mailto:your.email@example.com)
+- [Report a Bug](https://github.com/yourusername/ai-chat-exporter/issues)
+- [Request a Feature](https://github.com/yourusername/ai-chat-exporter/issues)
+- [Contact](mailto:your.email@example.com)
 
-## 🗺️ Roadmap
+## Roadmap
 
+- [x] Complete ChatGPT scraper implementation (Beta)
+- [ ] Enhance ChatGPT scraper for PDF file extraction
 - [ ] Complete Claude scraper implementation
-- [ ] Complete ChatGPT scraper implementation
 - [ ] Complete Meta AI scraper implementation
 - [ ] Add export templates customization
 - [ ] Add conversation search/filter
@@ -186,4 +190,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-<p align="center">Made with ❤️ by the community</p>
+Made with care by the community

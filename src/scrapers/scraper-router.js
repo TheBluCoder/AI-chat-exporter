@@ -25,18 +25,18 @@ const PLATFORM_CONFIG = {
     name: 'Claude (Active Chat)',
   },
   
-  // ChatGPT - Active Chat (will use specialized scraper - to be implemented)
+  // ChatGPT - Main domain
   CHATGPT_CHAT: {
-    pattern: /^https:\/\/chatgpt\.com\/c\//,
+    pattern: /^https:\/\/chatgpt\.com\//,
     scraper: 'chatgpt',
-    name: 'ChatGPT (Active Chat)',
+    name: 'ChatGPT',
   },
-  
+
   // ChatGPT - Alternative domain
   CHATGPT_CHAT_ALT: {
-    pattern: /^https:\/\/chat\.openai\.com\/c\//,
+    pattern: /^https:\/\/chat\.openai\.com\//,
     scraper: 'chatgpt',
-    name: 'ChatGPT (Active Chat)',
+    name: 'ChatGPT',
   },
   
   // Meta AI - Active Chat (will use specialized scraper - to be implemented)
@@ -168,9 +168,9 @@ async function runScrape() {
       console.warn("[Scraper-Router] Failed to send runtime message:", error);
     }
     
-    // Post message to window for debugging
-    window.postMessage({ type: "SCRAPE_RESULT", payload: result, platform: platform.name }, "*");
-    
+    // Post message to window for debugging (disabled - postMessage can't clone Promises)
+    // window.postMessage({ type: "SCRAPE_RESULT", payload: result, platform: platform.name }, "*");
+
     return result;
     
   } catch (error) {

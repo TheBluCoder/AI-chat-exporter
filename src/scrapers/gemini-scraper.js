@@ -3,6 +3,16 @@
  * Specialized scraper for Gemini's active chat interface
  * Extracts conversations, images, and uploaded documents
  * Uses shared utilities from utils.js
+ *
+ * STANDARDIZED MESSAGE FORMAT (must match across all scrapers):
+ * {
+ *   role: "user" | "assistant" | "model",
+ *   content: string,
+ *   media: [{ type: string, url: string, name: string, base64?: string }] | null,
+ *   uploaded_files: [{ name: string, type: string, url: string, content?: string, encoding?: string, mimeType?: string }] | null,
+ *   embedded_documents: [{ title: string, content: string, type: string }] | null,
+ *   timestamp: string
+ * }
  */
 
 // Configuration constants specific to Gemini active chat

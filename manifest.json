@@ -3,31 +3,33 @@
   "name": "AI Chat Exporter",
   "description": "Export conversations from AI platforms (Gemini, Claude, ChatGPT, Meta AI)",
   "version": "2.0.0",
-  "permissions": ["activeTab", "scripting"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_title": "Export AI Conversation"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": [
         "src/lib/browser-polyfill.js",
         "src/utils/utils.js",
         "src/scrapers/gemini-shared.js",
         "src/scrapers/gemini-scraper.js",
+        "src/scrapers/chatgpt-scraper.js",
         "src/scrapers/scraper-router.js",
         "src/content/content.js",
         "src/scrapers/generic-scraper.js"
       ],
       "run_at": "document_idle"
     }
-  ],
-  "icons": {
-    "16": "assets/icons/icon-16.png",
-    "32": "assets/icons/icon-32.png",
-    "48": "assets/icons/icon-48.png",
-    "128": "assets/icons/icon-128.png"
-  }
+  ]
 }
