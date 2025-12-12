@@ -135,7 +135,61 @@ function getMediaType(url) {
 }
 
 /**
- * Convert URL to Base64 data URL
+ * Detect MIME type from base64 data signature (magic bytes)
+ * @param {string} base64 - Base64 encoded data
+ * @returns {string|null} MIME type or null
+ */
+function detectMimeTypeFromBase64(base64) {
+  const signatures = {
+    'iVBORw0KGgo': 'image/png',
+    '/9j/': 'image/jpeg',
+    'R0lGODlh': 'image/gif',
+    'R0lGODdh': 'image/gif',
+    'UklGR': 'image/webp',
+    'Qk': 'image/bmp',
+    'PHN2Zy': 'image/svg+xml',
+    'AAABAA': 'image/x-icon',
+    'JVBERi': 'application/pdf',
+  };
+
+  for (const [signature, mimeType] of Object.entries(signatures)) {
+    if (base64.startsWith(signature)) {
+      return mimeType;
+    }
+  }
+  return null;
+}
+
+/**
+ * Detect MIME type from URL extension
+ * @param {string} url - The URL to check
+ * @returns {string|null} MIME type or null
+ */
+function detectMimeTypeFromUrl(url) {
+  const extensionMap = {
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'bmp': 'image/bmp',
+    'svg': 'image/svg+xml',
+    'ico': 'image/x-icon',
+    'pdf': 'application/pdf',
+  };
+
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname.toLowerCase();
+    const extension = pathname.split('.').pop();
+    return extensionMap[extension] || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Convert URL to Base64 data URL with proper MIME type detection
  * @param {string} url - URL to convert
  * @returns {Promise<string|null>} Base64 data URL or null
  */
@@ -143,9 +197,36 @@ async function urlToBase64(url) {
   try {
     const response = await fetch(url);
     const blob = await response.blob();
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
+      reader.onloadend = () => {
+        let dataUrl = reader.result;
+
+        // Check if MIME type is generic/incorrect
+        if (dataUrl.startsWith('data:application/octet-stream;') ||
+            dataUrl.startsWith('data:;')) {
+
+          // Extract base64 data
+          const base64Data = dataUrl.split(',')[1];
+
+          // Try to detect MIME type from base64 signature
+          let detectedMime = detectMimeTypeFromBase64(base64Data);
+
+          // If not detected from data, try URL extension
+          if (!detectedMime) {
+            detectedMime = detectMimeTypeFromUrl(url);
+          }
+
+          // Reconstruct data URL with correct MIME type
+          if (detectedMime) {
+            dataUrl = `data:${detectedMime};base64,${base64Data}`;
+            console.log(`[Utils] Corrected MIME type from ${blob.type} to ${detectedMime}`);
+          }
+        }
+
+        resolve(dataUrl);
+      };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
@@ -290,13 +371,55 @@ async function copyToClipboard(text) {
 // ============================================================================
 
 /**
+ * Escape HTML entities to prevent them from being rendered as HTML in Markdown
+ * Preserves code blocks (text between triple backticks) without escaping
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text
+ */
+function escapeHtmlForMarkdown(text) {
+  if (!text) return '';
+
+  // Split text by code blocks (triple backticks)
+  const parts = [];
+  let currentIndex = 0;
+  const codeBlockRegex = /```[\s\S]*?```/g;
+  let match;
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    // Escape text before the code block
+    if (match.index > currentIndex) {
+      const beforeBlock = text.substring(currentIndex, match.index);
+      parts.push(beforeBlock
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;'));
+    }
+
+    // Keep code block as-is (no escaping)
+    parts.push(match[0]);
+    currentIndex = match.index + match[0].length;
+  }
+
+  // Escape remaining text after last code block
+  if (currentIndex < text.length) {
+    const remaining = text.substring(currentIndex);
+    parts.push(remaining
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;'));
+  }
+
+  return parts.join('');
+}
+
+/**
  * Convert scraped chat data to Markdown format with base64 embedded media
  * @param {Object} result - Scraping result object
  * @returns {Promise<string>} Markdown formatted string
  */
 async function convertToMarkdown(result) {
-  let md = `# Chat Export - ${result.platform || 'Unknown Platform'}\n\n`;
-  md += `**URL:** ${result.url}\n`;
+  let md = `# Chat Export - ${escapeHtmlForMarkdown(result.platform || 'Unknown Platform')}\n\n`;
+  md += `**URL:** ${escapeHtmlForMarkdown(result.url)}\n`;
   md += `**Date:** ${new Date(result.timestamp).toLocaleString()}\n\n`;
   md += `---\n\n`;
 
@@ -307,14 +430,15 @@ async function convertToMarkdown(result) {
 
       // Handle both field name formats (content vs text)
       const messageText = msg.content || msg.text || '';
-      md += `${messageText}\n\n`;
+      // Escape HTML entities to prevent them from being rendered as HTML
+      md += `${escapeHtmlForMarkdown(messageText)}\n\n`;
 
       // Handle uploaded files (both formats: uploaded_files vs uploadedFiles)
       const uploadedFiles = msg.uploaded_files || msg.uploadedFiles;
       if (uploadedFiles && uploadedFiles.length > 0) {
         md += `*Uploaded Files:*\n`;
         uploadedFiles.forEach(file => {
-          md += `- [${file.type.toUpperCase()}] ${file.name}\n`;
+          md += `- [${file.type.toUpperCase()}] ${escapeHtmlForMarkdown(file.name)}\n`;
         });
         md += `\n`;
       }
@@ -336,7 +460,7 @@ async function convertToMarkdown(result) {
             if (base64) mediaUrl = base64;
           }
 
-          md += `![${m.name || m.alt || 'Image'}](${mediaUrl})\n`;
+          md += `![${escapeHtmlForMarkdown(m.name || m.alt || 'Image')}](${mediaUrl})\n`;
         }
         md += `\n`;
       }
@@ -345,10 +469,12 @@ async function convertToMarkdown(result) {
       if (msg.embedded_documents && msg.embedded_documents.length > 0) {
         md += `*Embedded Documents:*\n\n`;
         msg.embedded_documents.forEach(doc => {
-          md += `### ${doc.title}\n`;
+          md += `### ${escapeHtmlForMarkdown(doc.title)}\n`;
           if (doc.content.includes('```')) {
-            md += `${doc.content}\n\n`;
+            // Content already has code blocks, escape HTML entities
+            md += `${escapeHtmlForMarkdown(doc.content)}\n\n`;
           } else {
+            // Wrap in code block (content inside code blocks is auto-escaped)
             md += `\`\`\`${doc.type === 'text/markdown' ? 'markdown' : ''}\n${doc.content}\n\`\`\`\n\n`;
           }
         });
@@ -366,6 +492,21 @@ async function convertToMarkdown(result) {
 // ============================================================================
 // PDF EXPORT
 // ============================================================================
+
+/**
+ * Escape HTML entities for safe insertion into HTML
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped HTML
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 /**
  * Export chat data to PDF via print dialog
@@ -432,25 +573,26 @@ async function exportToPDF(result) {
     <body>
       <h1>Chat Export</h1>
       <div class="meta">
-        <strong>Platform:</strong> ${data.platform}<br>
-        <strong>URL:</strong> ${data.url}<br>
-        <strong>Date:</strong> ${new Date(data.timestamp).toLocaleString()}
+        <strong>Platform:</strong> ${escapeHtml(data.platform)}<br>
+        <strong>URL:</strong> ${escapeHtml(data.url)}<br>
+        <strong>Date:</strong> ${escapeHtml(new Date(data.timestamp).toLocaleString())}
       </div>
       <div class="chat">
         ${(data.messages || []).map(msg => {
-          const messageText = (msg.content || msg.text || '').replace(/\n/g, '<br>');
+          // Escape HTML entities first, then replace newlines with <br>
+          const messageText = escapeHtml(msg.content || msg.text || '').replace(/\n/g, '<br>');
           const uploadedFiles = msg.uploaded_files || msg.uploadedFiles;
           const media = msg.media || msg.images;
 
           return `
           <div class="message ${msg.role}">
-            <div class="role">${msg.role.toUpperCase()}</div>
+            <div class="role">${escapeHtml(msg.role.toUpperCase())}</div>
             <div class="content">${messageText}</div>
 
             ${uploadedFiles && uploadedFiles.length > 0 ? `
               <div class="media-list">
                 <strong>Uploaded:</strong>
-                <ul>${uploadedFiles.map(f => `<li>${f.name} (${f.type})</li>`).join('')}</ul>
+                <ul>${uploadedFiles.map(f => `<li>${escapeHtml(f.name)} (${escapeHtml(f.type)})</li>`).join('')}</ul>
               </div>
             ` : ''}
 
@@ -460,7 +602,7 @@ async function exportToPDF(result) {
                 ${media.map(m => {
                   const imgSrc = m.url || m.src || m.base64;
                   const imgName = m.name || m.alt || '';
-                  return m.type === 'image' || !m.type ? `<img src="${imgSrc}" alt="${imgName}">` : `<a href="${imgSrc}">${imgName || 'Link'}</a>`;
+                  return m.type === 'image' || !m.type ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(imgName)}">` : `<a href="${escapeHtml(imgSrc)}">${escapeHtml(imgName || 'Link')}</a>`;
                 }).join('<br>')}
               </div>
             ` : ''}
@@ -470,8 +612,8 @@ async function exportToPDF(result) {
                 <strong>Embedded Documents:</strong>
                 ${msg.embedded_documents.map(doc => `
                   <div class="embedded-doc">
-                    <h4 style="margin: 0 0 10px 0;">${doc.title}</h4>
-                    <pre>${doc.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                    <h4 style="margin: 0 0 10px 0;">${escapeHtml(doc.title)}</h4>
+                    <pre>${escapeHtml(doc.content)}</pre>
                   </div>
                 `).join('')}
               </div>

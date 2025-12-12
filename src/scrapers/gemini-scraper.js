@@ -15,8 +15,11 @@
  * }
  */
 
-// Configuration constants specific to Gemini active chat
-const GEMINI_CONFIG = {
+(function() {
+  'use strict';
+
+  // Configuration constants specific to Gemini active chat
+  const GEMINI_CONFIG = {
   SELECTORS: {
     // Main container
     CHAT_CONTAINER: 'chat-app',
@@ -48,13 +51,13 @@ const GEMINI_CONFIG = {
     USER_FILE_BUTTON: '.new-file-preview-file',
     DRIVE_VIEWER_TEXT: 'pre.drive-viewer-text-page',
   }
-};
+  };
 
-/**
- * Automatically scrolls to top to load full history
- * @param {Element} startElement - Element to start searching for scroll container
- */
-async function autoScrollToTop(startElement) {
+  /**
+   * Automatically scrolls to top to load full history
+   * @param {Element} startElement - Element to start searching for scroll container
+   */
+  async function autoScrollToTop(startElement) {
   console.log("[Gemini-Scraper] Starting auto-scroll sequence...");
 
   // Find the actual scrollable container
@@ -115,14 +118,14 @@ async function autoScrollToTop(startElement) {
       }
     }
   }
-}
+  }
 
-/**
- * Extract uploaded files from user query
- * @param {Element} userQueryElement - The user-query element
- * @returns {Array|null} Array of file objects or null
- */
-function extractUploadedFiles(userQueryElement) {
+  /**
+   * Extract uploaded files from user query
+   * @param {Element} userQueryElement - The user-query element
+   * @returns {Array|null} Array of file objects or null
+   */
+  function extractUploadedFiles(userQueryElement) {
   if (!userQueryElement) return null;
 
   const files = [];
@@ -167,14 +170,14 @@ function extractUploadedFiles(userQueryElement) {
   });
 
   return files.length > 0 ? files : null;
-}
+  }
 
-/**
- * Extract text content from user query, handling special formatting
- * @param {Element} userQueryElement - The user-query element
- * @returns {string} Extracted text content
- */
-function extractUserQueryText(userQueryElement) {
+  /**
+   * Extract text content from user query, handling special formatting
+   * @param {Element} userQueryElement - The user-query element
+   * @returns {string} Extracted text content
+   */
+  function extractUserQueryText(userQueryElement) {
   if (!userQueryElement) return '';
 
   const contentContainer = userQueryElement.querySelector(GEMINI_CONFIG.SELECTORS.USER_QUERY_CONTENT) ||
@@ -194,14 +197,14 @@ function extractUserQueryText(userQueryElement) {
   clone.querySelectorAll('button').forEach(el => el.remove());
 
   return clone.innerText.trim();
-}
+  }
 
-/**
- * Extract text content from model response
- * @param {Element} modelResponseElement - The model-response element
- * @returns {string} Extracted text content
- */
-function extractModelResponseText(modelResponseElement) {
+  /**
+   * Extract text content from model response
+   * @param {Element} modelResponseElement - The model-response element
+   * @returns {string} Extracted text content
+   */
+  function extractModelResponseText(modelResponseElement) {
   if (!modelResponseElement) return '';
 
   const messageContent = modelResponseElement.querySelector(GEMINI_CONFIG.SELECTORS.MESSAGE_CONTENT);
@@ -214,14 +217,14 @@ function extractModelResponseText(modelResponseElement) {
   clone.querySelectorAll('.action-button').forEach(el => el.remove());
 
   return clone.innerText.trim();
-}
+  }
 
-/**
- * Extract content from immersive embedded documents (chips)
- * @param {Element} modelResponseElement - The model-response element
- * @returns {Promise<Array|null>} Array of embedded documents or null
- */
-async function extractImmersiveDocuments(modelResponseElement) {
+  /**
+   * Extract content from immersive embedded documents (chips)
+   * @param {Element} modelResponseElement - The model-response element
+   * @returns {Promise<Array|null>} Array of embedded documents or null
+   */
+  async function extractImmersiveDocuments(modelResponseElement) {
   if (!modelResponseElement) return null;
 
   const chips = modelResponseElement.querySelectorAll(GEMINI_CONFIG.SELECTORS.IMMERSIVE_CHIP);
@@ -302,14 +305,14 @@ async function extractImmersiveDocuments(modelResponseElement) {
   }
 
   return documents.length > 0 ? documents : null;
-}
+  }
 
-/**
- * Extract user uploaded documents by clicking on them in the carousel
- * @param {Element} userQueryElement - The user-query element
- * @returns {Promise<Array>} Array of extracted document objects
- */
-async function extractUserUploadedDocuments(userQueryElement) {
+  /**
+   * Extract user uploaded documents by clicking on them in the carousel
+   * @param {Element} userQueryElement - The user-query element
+   * @returns {Promise<Array>} Array of extracted document objects
+   */
+  async function extractUserUploadedDocuments(userQueryElement) {
   const documents = [];
 
   const carousel = userQueryElement.querySelector(GEMINI_CONFIG.SELECTORS.USER_FILE_CAROUSEL);
@@ -364,13 +367,13 @@ async function extractUserUploadedDocuments(userQueryElement) {
   }
 
   return documents.length > 0 ? documents : null;
-}
+  }
 
-/**
- * Main scraping function for Google Gemini chat
- * @returns {Promise<Object>} Scraping result with messages and metadata
- */
-async function scrapeGeminiChat() {
+  /**
+   * Main scraping function for Google Gemini chat
+   * @returns {Promise<Object>} Scraping result with messages and metadata
+   */
+  async function scrapeGeminiChat() {
   try {
     console.log("[Gemini-Scraper] Starting scrape for:", location.href);
 
@@ -542,9 +545,11 @@ async function scrapeGeminiChat() {
       },
     };
   }
-}
+  }
 
-// Make scraper available globally (used by router)
-if (typeof window !== 'undefined') {
-  window.scrapeGeminiChat = scrapeGeminiChat;
-}
+  // Make scraper available globally (used by router)
+  if (typeof window !== 'undefined') {
+    window.scrapeGeminiChat = scrapeGeminiChat;
+  }
+
+})();
