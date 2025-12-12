@@ -21,14 +21,9 @@
       ],
       "js": [
         "src/lib/browser-polyfill.js",
-        "src/utils/utils.js",
-        "src/scrapers/gemini-shared.js",
-        "src/scrapers/gemini-scraper.js",
-        "src/scrapers/chatgpt-scraper.js",
-        "src/scrapers/scraper-router.js",
-        "src/content/content.js",
-        "src/scrapers/generic-scraper.js"
+        "src/content-script.js"
       ],
+      "type": "module",
       "run_at": "document_idle"
     }
   ]
