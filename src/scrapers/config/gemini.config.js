@@ -41,7 +41,7 @@ export const GEMINI_CONFIG = {
 
   scrollConfig: {
     maxAttempts: 50,
-    delay: 800,
+    delay: 1500,
     stabilityDelay: 500,
     stabilityTimeout: 8000,
   },

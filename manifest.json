@@ -22,21 +22,24 @@
         "https://claude.ai/chat/*"
       ],
       "js": [
-        "src/lib/browser-polyfill.js"
-      ],
-      "run_at": "document_start"
-    },
-    {
-      "matches": [
-        "https://chatgpt.com/c/*",
-        "https://gemini.google.com/app/*",
-        "https://claude.ai/chat/*"
-      ],
-      "js": [
+        "src/lib/browser-polyfill.js",
         "src/content-script.js"
       ],
-      "type": "module",
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/scrapers/*.js",
+        "src/scrapers/**/*.js",
+        "src/utils-modules/*.js"
+      ],
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://gemini.google.com/*",
+        "https://claude.ai/*"
+      ]
     }
   ]
 }

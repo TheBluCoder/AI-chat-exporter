@@ -1,22 +1,33 @@
 /**
  * Content Script Entry Point
  * Main entry point for the browser extension content script
- * Uses ES6 modules to initialize platform-specific scrapers
+ * Uses dynamic imports to load ES6 modules
  */
-
-import { initializeScrapers } from './scrapers/init.js';
 
 console.log('[AI-Chat-Exporter] Content script loaded');
 console.log('[AI-Chat-Exporter] URL:', window.location.href);
 
+// Dynamic import with proper extension URL
+async function loadScrapers() {
+  try {
+    const moduleUrl = browserAPI.runtime.getURL('src/scrapers/init.js');
+    console.log('[AI-Chat-Exporter] Loading module from:', moduleUrl);
+
+    const module = await import(moduleUrl);
+    console.log('[AI-Chat-Exporter] Module loaded successfully');
+
+    module.initializeScrapers();
+  } catch (error) {
+    console.error('[AI-Chat-Exporter] Failed to load scrapers:', error);
+  }
+}
+
 // Initialize scrapers when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    initializeScrapers();
-  });
+  document.addEventListener('DOMContentLoaded', loadScrapers);
 } else {
   // DOM already loaded
-  initializeScrapers();
+  loadScrapers();
 }
 
 // Listen for messages from the popup

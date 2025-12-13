@@ -31,7 +31,7 @@ export class BaseScraper {
     this.selectors = config.selectors;
     this.scrollConfig = config.scrollConfig || {
       maxAttempts: 50,
-      delay: 800,
+      delay: 1500,
       stabilityDelay: 500,
       stabilityTimeout: 8000,
     };
