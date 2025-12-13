@@ -6,6 +6,7 @@
 
 import { ChatGPTScraper } from './platforms/ChatGPTScraper.js';
 import { GeminiScraper } from './platforms/GeminiScraper.js';
+import { ClaudeScraper } from './platforms/ClaudeScraper.js';
 
 /**
  * Platform detection configuration
@@ -23,11 +24,10 @@ const PLATFORM_PATTERNS = {
     ScraperClass: GeminiScraper,
     globalFunction: 'scrapeGeminiChat',
   },
-  // Placeholders for future scrapers
   CLAUDE: {
     pattern: /^https:\/\/claude\.ai\/chat\//,
     name: 'Claude (Active Chat)',
-    ScraperClass: null, // TODO: Implement ClaudeScraper
+    ScraperClass: ClaudeScraper,
     globalFunction: 'scrapeClaude',
   },
   GEMINI_SHARED: {
@@ -77,12 +77,12 @@ export function initializeScrapers() {
   const scraper = new platform.ScraperClass();
 
   // Expose global function for backwards compatibility with popup.js
-  window[platform.globalFunction] = async function() {
+  window[platform.globalFunction] = async function () {
     return await scraper.scrape();
   };
 
   // Also expose runScrape for backwards compatibility with router
-  window.runScrape = async function() {
+  window.runScrape = async function () {
     const result = await scraper.scrape();
 
     // Add platform info to result
@@ -111,7 +111,7 @@ export function initializeScrapers() {
   };
 
   // Expose platform info function
-  window.getPlatformInfo = function() {
+  window.getPlatformInfo = function () {
     return {
       url: window.location.href,
       platform_name: platform.name,
