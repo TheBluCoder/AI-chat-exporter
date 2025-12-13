@@ -22,7 +22,17 @@
         "https://claude.ai/chat/*"
       ],
       "js": [
-        "src/lib/browser-polyfill.js",
+        "src/lib/browser-polyfill.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/c/*",
+        "https://gemini.google.com/app/*",
+        "https://claude.ai/chat/*"
+      ],
+      "js": [
         "src/content-script.js"
       ],
       "type": "module",
