@@ -39,6 +39,28 @@ export class GeminiScraper extends BaseScraper {
   }
 
   /**
+   * Gemini loads all messages in DOM, so minimal scrolling needed
+   * Override to do simple scroll to top instead of aggressive auto-scroll
+   * @param {Element} container - Conversation container
+   * @returns {Promise<void>}
+   */
+  async scrollToLoadHistory(container) {
+    console.log(`[${this.platform}-Scraper] Scrolling to load history...`);
+
+    const scrollContainer = this.findScrollContainer(container);
+
+    // Simple scroll to top (Gemini doesn't lazy-load like ChatGPT)
+    scrollContainer.scrollTop = 0;
+    await this.sleep(1000);
+
+    // One more attempt to ensure we're at top
+    scrollContainer.scrollTop = 0;
+    await this.sleep(500);
+
+    console.log(`[${this.platform}-Scraper] Scroll complete`);
+  }
+
+  /**
    * Extract all messages from the Gemini conversation
    * Override to handle Gemini's message-set structure and embedded documents
    * @param {Element} container - Conversation container
