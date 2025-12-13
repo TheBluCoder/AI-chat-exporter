@@ -149,6 +149,46 @@ export class ChatGPTScraper extends BaseScraper {
     console.log(`[${this.platform}-Scraper] Model text extracted (${text.length} chars): ${text.substring(0, 50)}...`);
     return text;
   }
+
+  /**
+   * Extract generated images from model response
+   * Override to handle image-only responses where MODEL_CONTENT doesn't exist
+   * @param {Element} modelTurnElement - The model turn article
+   * @returns {Array|null} Array of media objects or null
+   */
+  extractModelMedia(modelTurnElement) {
+    if (!modelTurnElement) return null;
+
+    // Try to find the content container, but for image-only responses it might not exist
+    let contentContainer = modelTurnElement.querySelector(this.selectors.MODEL_CONTENT);
+
+    // Fallback: If no MODEL_CONTENT (happens with image-only responses), use the article itself
+    if (!contentContainer) {
+      console.log(`[${this.platform}-Scraper] ℹ️ MODEL_CONTENT not found, searching entire article for images`);
+      contentContainer = modelTurnElement;
+    } else {
+      console.log(`[${this.platform}-Scraper] MODEL_CONTENT found, searching for images...`);
+    }
+
+    console.log(`[${this.platform}-Scraper] Content container has ${contentContainer.querySelectorAll('img').length} total img elements`);
+
+    // Use base class extraction with the adjusted container
+    const media = this.extractImagesFromElement(contentContainer, {
+      imageSelector: this.selectors.GENERATED_IMG,
+      source: 'model_generation',
+      contentSelector: null, // Don't search for content selector, we already have the container
+    });
+
+    // Debug: show all img alts if no images found
+    if (!media || media.length === 0) {
+      const allImgs = contentContainer.querySelectorAll('img');
+      const alts = Array.from(allImgs).map(img => img.alt || '(no alt)').join(', ');
+      console.log(`[${this.platform}-Scraper] Available img alt attributes: [${alts}]`);
+    }
+
+    console.log(`[${this.platform}-Scraper] Total generated images extracted: ${media?.length || 0}`);
+    return media;
+  }
 }
 
 export default ChatGPTScraper;
