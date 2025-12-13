@@ -17,7 +17,9 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "https://chatgpt.com/c/*",
+        "https://gemini.google.com/app/*",
+        "https://claude.ai/chat/*"
       ],
       "js": [
         "src/lib/browser-polyfill.js",
