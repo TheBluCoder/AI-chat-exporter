@@ -368,6 +368,45 @@ export class GeminiScraper extends BaseScraper {
 
     return documents.length > 0 ? documents : null;
   }
+
+
+  /**
+   * Find the scroll container for the chat history
+   * Override to handle Gemini's specific scroll container structure
+   * @param {Element} startElement - The element to start the search from
+   * @returns {Element|null} The scroll container element or null if not found
+   */
+  findScrollContainer(startElement) {
+    // 1. Try to find user-query elements and get their parent
+    let scrollContainer = startElement;
+    const messageElement = startElement.querySelector(this.selectors.USER_QUERY);
+    if (messageElement && messageElement.parentElement) {
+      scrollContainer = messageElement.parentElement;
+    }
+    if (scrollContainer.scrollHeight <= scrollContainer.clientHeight) {
+      let current = scrollContainer;
+      while (current && current !== document.body) {
+        const style = window.getComputedStyle(current);
+        if (
+          style.overflowY === 'auto' ||
+          style.overflowY === 'scroll' ||
+          current.scrollHeight > current.clientHeight
+        ) {
+          scrollContainer = current;
+          break;
+        }
+        current = current.parentElement;
+      }
+    }
+
+    // Fallback to main or documentElement
+    if (!scrollContainer || scrollContainer === document.body) {
+      scrollContainer = document.querySelector('main') || document.documentElement;
+    }
+    console.log(`[Gemini-Scraper] Identified scroll container: ${scrollContainer.tagName}.${scrollContainer.className.split(' ')[0]}`);
+
+    return scrollContainer;
+  }
 }
 
 export default GeminiScraper;
