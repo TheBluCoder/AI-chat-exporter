@@ -16,6 +16,7 @@ export class GeminiScraper extends BaseScraper {
 
   /**
    * Wait for Gemini's specific container
+   * Override to handle Gemini's nested container structure
    * @returns {Promise<Element>}
    */
   async waitForContainer() {
@@ -39,6 +40,7 @@ export class GeminiScraper extends BaseScraper {
 
   /**
    * Extract all messages from the Gemini conversation
+   * Override to handle Gemini's message-set structure and embedded documents
    * @param {Element} container - Conversation container
    * @returns {Promise<Array>} Array of message objects
    */
