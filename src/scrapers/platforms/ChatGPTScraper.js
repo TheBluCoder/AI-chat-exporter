@@ -13,38 +13,21 @@ export class ChatGPTScraper extends BaseScraper {
   }
 
   /**
-   * ChatGPT uses progressive scrolling due to lazy loading
-   * Override to use progressive scroll extraction
-   * @param {Element} container - Container element
-   * @returns {Promise<void>}
-   */
-  async scrollToLoadHistory(container) {
-    await this.progressiveScrollExtract(container);
-  }
-
-  /**
-   * Extract all messages using progressive scroll technique
-   * ChatGPT lazy-loads messages, so we scroll and extract as we go
+   * ChatGPT lazy-loads messages, so we must extract while scrolling
+   * Override extractAllMessages to do progressive scroll + extraction
    * @param {Element} container - Container element
    * @returns {Promise<Array>} Array of messages
    */
-  async progressiveScrollExtract(container) {
-    console.log(`[${this.platform}-Scraper] Starting progressive scroll extraction...`);
+  async extractAllMessages(container) {
+    console.log(`[${this.platform}-Scraper] Starting progressive extraction...`);
 
     const scrollContainer = this.findScrollContainer(container);
-    console.log(`[${this.platform}-Scraper] Identified scroll container: ${scrollContainer.tagName}`);
-
-    // Step 1: Scroll to the very top to load oldest messages
-    console.log(`[${this.platform}-Scraper] Phase 1: Scrolling to top...`);
-    await this.autoScrollToTop(scrollContainer);
-
-    // Step 2: Progressive scroll down while extracting messages
-    console.log(`[${this.platform}-Scraper] Phase 2: Progressive extraction...`);
     const allMessages = new Map(); // Use Map to deduplicate by turn_id
-    const scrollIncrement = scrollContainer.clientHeight * this.scrollConfig.scrollIncrement;
+    const scrollIncrement = scrollContainer.clientHeight * (this.scrollConfig.scrollIncrement || 0.8);
     let currentScroll = 0;
     const maxScroll = scrollContainer.scrollHeight;
 
+    // Progressive scroll down while extracting messages
     while (currentScroll < maxScroll) {
       // Extract currently visible messages
       const visibleTurns = Array.from(scrollContainer.querySelectorAll(this.selectors.ARTICLE_TURN));
@@ -72,8 +55,6 @@ export class ChatGPTScraper extends BaseScraper {
                 turn_id: turnId,
               }));
               console.log(`[${this.platform}-Scraper] ✓ Extracted user turn ${turnIndex} (text: ${!!userText}, media: ${userMedia?.length || 0})`);
-            } else {
-              console.log(`[${this.platform}-Scraper] ✗ Skipping empty user turn ${turnIndex}`);
             }
           } else if (role === 'assistant') {
             console.log(`[${this.platform}-Scraper] >> Encountered assistant turn ${turnIndex} (ID: ${turnId})`);
@@ -89,9 +70,6 @@ export class ChatGPTScraper extends BaseScraper {
                 turn_id: turnId,
               }));
               console.log(`[${this.platform}-Scraper] ✓ Extracted model turn ${turnIndex} (text: ${!!modelText}, media: ${modelMedia?.length || 0})`);
-            } else {
-              console.log(turn.innerHTML);
-              console.log(`[${this.platform}-Scraper] ✗ Skipping empty assistant turn ${turnIndex}`);
             }
           }
         } catch (err) {
@@ -118,26 +96,6 @@ export class ChatGPTScraper extends BaseScraper {
     console.log(`[${this.platform}-Scraper] Progressive extraction complete: ${messages.length} total messages`);
 
     return messages;
-  }
-
-  /**
-   * Extract all messages from container
-   * ChatGPT uses progressive extraction, so this is handled in scrollToLoadHistory
-   * @param {Element} container - Container element
-   * @returns {Promise<Array>} Array of messages
-   */
-  async extractAllMessages(container) {
-    // Messages already extracted during progressive scroll
-    return this._extractedMessages || [];
-  }
-
-  /**
-   * Override scroll to load to store extracted messages
-   * @param {Element} container - Container element
-   * @returns {Promise<void>}
-   */
-  async scrollToLoadHistory(container) {
-    this._extractedMessages = await this.progressiveScrollExtract(container);
   }
 
   /**
