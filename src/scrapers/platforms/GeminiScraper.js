@@ -56,7 +56,7 @@ export class GeminiScraper extends BaseScraper {
           // Extract user query
           const userQuery = messageSet.querySelector(this.selectors.USER_QUERY);
           if (userQuery) {
-            const userText = this.extractUserQueryText(userQuery);
+            const userText = this.extractUserText(userQuery);
             const uploadedFiles = this.extractUploadedFiles(userQuery);
             const userDocs = await this.extractUserUploadedDocuments(userQuery);
 
@@ -74,7 +74,7 @@ export class GeminiScraper extends BaseScraper {
           // Extract model response
           const modelResponse = messageSet.querySelector(this.selectors.MODEL_RESPONSE);
           if (modelResponse) {
-            const modelText = this.extractModelResponseText(modelResponse);
+            const modelText = this.extractModelText(modelResponse);
             const modelMedia = extractMedia(modelResponse);
             const embeddedDocs = await this.extractImmersiveDocuments(modelResponse);
 
@@ -107,7 +107,7 @@ export class GeminiScraper extends BaseScraper {
         try {
           if (i < userQueries.length) {
             const userQuery = userQueries[i];
-            const userText = this.extractUserQueryText(userQuery);
+            const userText = this.extractUserText(userQuery);
             const uploadedFiles = this.extractUploadedFiles(userQuery);
             const userDocs = await this.extractUserUploadedDocuments(userQuery);
 
@@ -124,7 +124,7 @@ export class GeminiScraper extends BaseScraper {
 
           if (i < modelResponses.length) {
             const modelResponse = modelResponses[i];
-            const modelText = this.extractModelResponseText(modelResponse);
+            const modelText = this.extractModelText(modelResponse);
             const modelMedia = extractMedia(modelResponse);
             const embeddedDocs = await this.extractImmersiveDocuments(modelResponse);
 
@@ -200,50 +200,21 @@ export class GeminiScraper extends BaseScraper {
   }
 
   /**
-   * Extract text content from user query
+   * Extract text from user query
+   * Override to handle Gemini-specific file preview removal
    * @param {Element} userQueryElement - The user-query element
    * @returns {string} Extracted text content
    */
-  extractUserQueryText(userQueryElement) {
-    if (!userQueryElement) return '';
-
-    const contentContainer = userQueryElement.querySelector(this.selectors.USER_QUERY_CONTENT) ||
-      userQueryElement.querySelector(this.selectors.USER_BUBBLE);
-
-    if (!contentContainer) {
-      return userQueryElement.innerText.trim();
-    }
-
-    // Clone to avoid modifying DOM
-    const clone = contentContainer.cloneNode(true);
-
-    // Remove file preview elements
-    clone.querySelectorAll(this.selectors.FILE_PREVIEW).forEach(el => el.remove());
-    clone.querySelectorAll('[data-test-id="uploaded-file"]').forEach(el => el.remove());
-    clone.querySelectorAll('[data-test-id="uploaded-img"]').forEach(el => el.remove());
-    clone.querySelectorAll('button').forEach(el => el.remove());
-
-    return clone.innerText.trim();
-  }
-
-  /**
-   * Extract text content from model response
-   * @param {Element} modelResponseElement - The model-response element
-   * @returns {string} Extracted text content
-   */
-  extractModelResponseText(modelResponseElement) {
-    if (!modelResponseElement) return '';
-
-    const messageContent = modelResponseElement.querySelector(this.selectors.MESSAGE_CONTENT);
-
-    if (!messageContent) {
-      return modelResponseElement.innerText.trim();
-    }
-
-    const clone = messageContent.cloneNode(true);
-    clone.querySelectorAll('.action-button').forEach(el => el.remove());
-
-    return clone.innerText.trim();
+  extractUserText(userQueryElement) {
+    return this.extractTextFromElement(userQueryElement, {
+      contentSelector: this.selectors.USER_QUERY_CONTENT || this.selectors.USER_BUBBLE,
+      removeSelectors: [
+        this.selectors.FILE_PREVIEW,
+        '[data-test-id="uploaded-file"]',
+        '[data-test-id="uploaded-img"]',
+        'button'
+      ],
+    });
   }
 
   /**

@@ -43,8 +43,8 @@ export class ChatGPTScraper extends BaseScraper {
         try {
           if (role === 'user') {
             console.log(`[${this.platform}-Scraper] >> Encountered user turn ${turnIndex} (ID: ${turnId})`);
-            const userText = this.extractUserQueryText(turn);
-            const userMedia = this.extractUserImages(turn);
+            const userText = this.extractUserText(turn);
+            const userMedia = this.extractUserMedia(turn);
 
             if (userText || userMedia) {
               allMessages.set(turnId, this.createMessage({
@@ -58,7 +58,7 @@ export class ChatGPTScraper extends BaseScraper {
             }
           } else if (role === 'assistant') {
             console.log(`[${this.platform}-Scraper] >> Encountered assistant turn ${turnIndex} (ID: ${turnId})`);
-            const modelText = this.extractModelResponseText(turn);
+            const modelText = this.extractModelText(turn);
             const modelMedia = this.extractModelMedia(turn);
 
             if (modelText || modelMedia) {
@@ -99,96 +99,12 @@ export class ChatGPTScraper extends BaseScraper {
   }
 
   /**
-   * Extract uploaded images from user query
-   * @param {Element} userTurnElement - The user turn article
-   * @returns {Array|null} Array of media objects or null
-   */
-  extractUserImages(userTurnElement) {
-    if (!userTurnElement) return null;
-
-    const media = [];
-    const seenUrls = new Set();
-
-    // Scoped to the specific content area to avoid matching unrelated images
-    const contentArea = userTurnElement.querySelector(this.selectors.USER_CONTENT);
-    if (!contentArea) return null;
-
-    // Extract uploaded images
-    const imgElements = contentArea.querySelectorAll(this.selectors.UPLOADED_IMG);
-    console.log(`[${this.platform}-Scraper] Found ${imgElements.length} uploaded images in user turn`);
-
-    imgElements.forEach((img) => {
-      let src = img.src || img.getAttribute('data-src') || img.dataset.src;
-      console.log(`[${this.platform}-Scraper] Processing user image: ${src?.substring(0, 60)}...`);
-
-      if (src && !src.startsWith("data:") && !seenUrls.has(src)) {
-        seenUrls.add(src);
-
-        let imageName = 'uploaded_image.jpg';
-        try {
-          const urlObj = new URL(src);
-          const filename = urlObj.pathname.split('/').pop();
-          if (filename && filename.length > 0) {
-            imageName = filename;
-            if (!imageName.includes('.')) {
-              imageName += '.jpg';
-            }
-          }
-        } catch (e) {
-          console.warn(`[${this.platform}-Scraper] Failed to parse image URL:`, src);
-        }
-
-        console.log(`[${this.platform}-Scraper] ✓ Added user image: ${imageName}`);
-        media.push({
-          name: img.alt || imageName,
-          type: 'image',
-          source: 'user_upload',
-          url: src,
-        });
-      }
-    });
-
-    console.log(`[${this.platform}-Scraper] Total user images extracted: ${media.length}`);
-    return media.length > 0 ? media : null;
-  }
-
-  /**
-   * Extract text content from user query
-   * @param {Element} userTurnElement - The user turn article
-   * @returns {string} Extracted text content
-   */
-  extractUserQueryText(userTurnElement) {
-    if (!userTurnElement) return '';
-
-    const contentContainer = userTurnElement.querySelector(this.selectors.USER_CONTENT);
-    if (!contentContainer) {
-      return userTurnElement.innerText.trim();
-    }
-
-    // Use specific text class if available
-    const textEl = contentContainer.querySelector(this.selectors.USER_TEXT);
-    if (textEl) {
-      const text = textEl.innerText.trim();
-      console.log(`[${this.platform}-Scraper] User text extracted (${text.length} chars): ${text.substring(0, 50)}...`);
-      return text;
-    }
-
-    // Fallback: exclude image buttons and get text
-    const clone = contentContainer.cloneNode(true);
-    clone.querySelectorAll('button').forEach(el => el.remove());
-    clone.querySelectorAll('img').forEach(el => el.remove());
-
-    const text = clone.innerText.trim();
-    console.log(`[${this.platform}-Scraper] User text (fallback) extracted (${text.length} chars): ${text.substring(0, 50)}...`);
-    return text;
-  }
-
-  /**
    * Extract text content from model response
+   * Override to handle ChatGPT's code block formatting
    * @param {Element} modelTurnElement - The model turn article
    * @returns {string} Extracted text content
    */
-  extractModelResponseText(modelTurnElement) {
+  extractModelText(modelTurnElement) {
     if (!modelTurnElement) return '';
 
     const contentContainer = modelTurnElement.querySelector(this.selectors.MODEL_CONTENT);
@@ -232,67 +148,6 @@ export class ChatGPTScraper extends BaseScraper {
 
     console.log(`[${this.platform}-Scraper] Model text extracted (${text.length} chars): ${text.substring(0, 50)}...`);
     return text;
-  }
-
-  /**
-   * Extract generated images from model response
-   * @param {Element} modelTurnElement - The model turn article
-   * @returns {Array|null} Array of media objects or null
-   */
-  extractModelMedia(modelTurnElement) {
-    if (!modelTurnElement) return null;
-
-    // Try to find the content container, but for image-only responses it might not exist
-    let contentContainer = modelTurnElement.querySelector(this.selectors.MODEL_CONTENT);
-
-    // Fallback: If no MODEL_CONTENT (happens with image-only responses), use the article itself
-    if (!contentContainer) {
-      console.log(`[${this.platform}-Scraper] ℹ️ MODEL_CONTENT not found, searching entire article for images`);
-      contentContainer = modelTurnElement;
-    } else {
-      console.log(`[${this.platform}-Scraper] MODEL_CONTENT found, searching for images...`);
-    }
-
-    console.log(`[${this.platform}-Scraper] Content container has ${contentContainer.querySelectorAll('img').length} total img elements`);
-
-    const media = [];
-    const seenUrls = new Set();
-
-    // Look for generated images
-    const images = contentContainer.querySelectorAll(this.selectors.GENERATED_IMG);
-    console.log(`[${this.platform}-Scraper] Found ${images.length} images with selector '${this.selectors.GENERATED_IMG}'`);
-
-    // Debug: show all img alts
-    if (images.length === 0) {
-      const allImgs = contentContainer.querySelectorAll('img');
-      const alts = Array.from(allImgs).map(img => img.alt || '(no alt)').join(', ');
-      console.log(`[${this.platform}-Scraper] Available img alt attributes: [${alts}]`);
-    }
-
-    images.forEach(img => {
-      // Check if the image is visible (opacity 1)
-      const style = img.getAttribute('style') || '';
-      if (style.includes('opacity: 0') || style.includes('opacity: 0.01')) {
-        console.log(`[${this.platform}-Scraper] ✗ Skipping hidden image (opacity 0)`);
-        return;
-      }
-
-      let src = img.src || img.getAttribute('data-src');
-
-      if (src && !seenUrls.has(src)) {
-        seenUrls.add(src);
-        console.log(`[${this.platform}-Scraper] ✓ Added generated image: ${img.alt || 'Generated Image'}`);
-        media.push({
-          url: src,
-          type: "image",
-          name: img.alt || "Generated Image",
-          source: "model_generation"
-        });
-      }
-    });
-
-    console.log(`[${this.platform}-Scraper] Total generated images extracted: ${media.length}`);
-    return media.length > 0 ? media : null;
   }
 }
 

@@ -312,6 +312,191 @@ export class BaseScraper {
   }
 
   /**
+   * Generic text extraction helper
+   * Extracts text from an element with configurable cleanup
+   * @param {Element} element - The element to extract text from
+   * @param {Object} options - Extraction options
+   * @param {string|null} options.contentSelector - Selector for content container (optional)
+   * @param {string|null} options.textSelector - Selector for specific text element (optional)
+   * @param {Array<string>} options.removeSelectors - Selectors to remove before extraction
+   * @returns {string} Extracted text
+   */
+  extractTextFromElement(element, options = {}) {
+    if (!element) return '';
+
+    const {
+      contentSelector = null,
+      textSelector = null,
+      removeSelectors = ['button', 'img'],
+    } = options;
+
+    // Find content container if specified
+    let targetElement = element;
+    if (contentSelector) {
+      const container = element.querySelector(contentSelector);
+      if (container) {
+        targetElement = container;
+      }
+    }
+
+    // Try specific text element if specified
+    if (textSelector) {
+      const textEl = targetElement.querySelector(textSelector);
+      if (textEl) {
+        return textEl.innerText.trim();
+      }
+    }
+
+    // Fallback: clone and clean
+    const clone = targetElement.cloneNode(true);
+
+    // Remove unwanted elements
+    removeSelectors.forEach(selector => {
+      clone.querySelectorAll(selector).forEach(el => el.remove());
+    });
+
+    return clone.innerText.trim();
+  }
+
+  /**
+   * Generic image extraction helper
+   * Extracts images from an element with deduplication
+   * @param {Element} element - The element to search for images
+   * @param {Object} options - Extraction options
+   * @param {string} options.imageSelector - Selector for images
+   * @param {string} options.source - Source type ('user_upload' or 'model_generation')
+   * @param {string|null} options.contentSelector - Optional content container selector
+   * @param {boolean} options.skipDataUrls - Skip data: URLs (default true)
+   * @returns {Array|null} Array of media objects or null
+   */
+  extractImagesFromElement(element, options = {}) {
+    if (!element) return null;
+
+    const {
+      imageSelector,
+      source = 'user_upload',
+      contentSelector = null,
+      skipDataUrls = true,
+    } = options;
+
+    // Find content container if specified
+    let searchElement = element;
+    if (contentSelector) {
+      const container = element.querySelector(contentSelector);
+      if (!container) return null;
+      searchElement = container;
+    }
+
+    const media = [];
+    const seenUrls = new Set();
+
+    const images = searchElement.querySelectorAll(imageSelector);
+
+    images.forEach((img) => {
+      // Skip hidden images
+      const style = img.getAttribute('style') || '';
+      if (style.includes('opacity: 0') || style.includes('opacity: 0.01')) {
+        return;
+      }
+
+      let src = img.src || img.getAttribute('data-src') || img.dataset.src;
+
+      // Skip data URLs if requested
+      if (skipDataUrls && src && src.startsWith('data:')) {
+        return;
+      }
+
+      if (src && !seenUrls.has(src)) {
+        seenUrls.add(src);
+
+        // Extract filename from URL if possible
+        let imageName = img.alt || 'image.jpg';
+        try {
+          const urlObj = new URL(src);
+          const filename = urlObj.pathname.split('/').pop();
+          if (filename && filename.length > 0) {
+            imageName = filename;
+            if (!imageName.includes('.')) {
+              imageName += '.jpg';
+            }
+          }
+        } catch (e) {
+          // Keep default name
+        }
+
+        media.push({
+          name: img.alt || imageName,
+          type: 'image',
+          source: source,
+          url: src,
+        });
+      }
+    });
+
+    return media.length > 0 ? media : null;
+  }
+
+  /**
+   * Extract text from user message
+   * Can be overridden for platform-specific extraction
+   * @param {Element} element - User message element
+   * @returns {string} Extracted text
+   */
+  extractUserText(element) {
+    return this.extractTextFromElement(element, {
+      contentSelector: this.selectors.USER_CONTENT,
+      textSelector: this.selectors.USER_TEXT,
+      removeSelectors: ['button', 'img'],
+    });
+  }
+
+  /**
+   * Extract text from model message
+   * Can be overridden for platform-specific extraction
+   * @param {Element} element - Model message element
+   * @returns {string} Extracted text
+   */
+  extractModelText(element) {
+    return this.extractTextFromElement(element, {
+      contentSelector: this.selectors.MODEL_CONTENT,
+      textSelector: this.selectors.MODEL_TEXT,
+      removeSelectors: ['button', '.action-button'],
+    });
+  }
+
+  /**
+   * Extract media from user message
+   * Can be overridden for platform-specific extraction
+   * @param {Element} element - User message element
+   * @returns {Array|null} Array of media objects or null
+   */
+  extractUserMedia(element) {
+    if (!this.selectors.UPLOADED_IMG) return null;
+
+    return this.extractImagesFromElement(element, {
+      imageSelector: this.selectors.UPLOADED_IMG,
+      source: 'user_upload',
+      contentSelector: this.selectors.USER_CONTENT,
+    });
+  }
+
+  /**
+   * Extract media from model message
+   * Can be overridden for platform-specific extraction
+   * @param {Element} element - Model message element
+   * @returns {Array|null} Array of media objects or null
+   */
+  extractModelMedia(element) {
+    if (!this.selectors.GENERATED_IMG) return null;
+
+    return this.extractImagesFromElement(element, {
+      imageSelector: this.selectors.GENERATED_IMG,
+      source: 'model_generation',
+      contentSelector: this.selectors.MODEL_CONTENT,
+    });
+  }
+
+  /**
    * Create a standardized message object
    * @param {Object} params - Message parameters
    * @returns {Object} Standardized message
