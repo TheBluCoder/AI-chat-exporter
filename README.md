@@ -1,20 +1,23 @@
 # AI Chat Exporter
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/yourusername/ai-chat-exporter)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/yourusername/ai-chat-exporter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
+[![Architecture](https://img.shields.io/badge/architecture-ES6%20Modules-brightgreen.svg)](docs/ES6_MIGRATION.md)
 
-A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, ChatGPT, and Meta AI.
+A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, ChatGPT, and Meta AI. Built with modern ES6 architecture for maximum extensibility and maintainability.
 
 ## Features
 
 - **Multi-Platform Support**: Export from Gemini, Claude, ChatGPT, and Meta AI
 - **Multiple Export Formats**: JSON, Markdown, and PDF
 - **Media Embedding**: Automatically embeds images as base64 in exports
-- **Document Extraction**: Captures uploaded files and embedded documents
+- **Document Extraction**: Captures uploaded files, embedded documents, and preview panels
 - **Browser Agnostic**: Works on Chrome, Edge, Firefox, and Safari
 - **Modern UI**: Clean, dark-themed interface
 - **Fast & Efficient**: Optimized scraping with automatic scroll handling
+- **ES6 Modules**: Modern architecture with 70% less code duplication
+- **Template Pattern**: Easily extensible for new platforms
 
 ## Quick Start
 
@@ -50,38 +53,53 @@ A powerful, browser-agnostic extension to export conversations from popular AI p
 
 ## Supported Platforms
 
-| Platform | Active Chat | Shared Links | Status |
-|----------|-------------|--------------|--------|
-| **Google Gemini** | Full Support | Full Support | Stable |
-| **ChatGPT** | Beta | Not Yet | Beta |
-| **Claude** | Planned | Planned | Planned |
-| **Meta AI** | Planned | Planned | Planned |
+| Platform | Active Chat | Shared Links | Preview/Artifacts | Status |
+|----------|-------------|--------------|-------------------|--------|
+| **Google Gemini** | ✅ Full Support | ✅ Full Support | ✅ Immersive Docs | Stable |
+| **ChatGPT** | ✅ Full Support | ❌ Not Yet | ✅ Image Generation | Stable |
+| **Claude** | ✅ Full Support | ❌ Not Yet | ✅ Code Previews | Stable |
+| **Meta AI** | 🔄 Planned | 🔄 Planned | 🔄 Planned | Planned |
 
-## Project Structure
+### Platform-Specific Features
+- **Gemini**: Extracts uploaded documents, immersive editor content, and shared conversation links
+- **ChatGPT**: Progressive scroll extraction for lazy-loaded conversations, code blocks, generated images
+- **Claude**: Preview panel extraction (artifacts), code blocks with syntax highlighting
+
+## Project Structure (v3.0 ES6 Architecture)
 
 ```
 ai-chat-exporter/
 ├── src/
-│   ├── popup/              # Extension popup UI
+│   ├── popup/                    # Extension popup UI
 │   │   ├── popup.html
 │   │   └── popup.js
-│   ├── content/            # Content scripts
-│   │   └── content.js
-│   ├── scrapers/           # Platform-specific scrapers
-│   │   ├── gemini-scraper.js
-│   │   ├── gemini-shared.js
-│   │   ├── chatgpt-scraper.js
-│   │   ├── generic-scraper.js
-│   │   └── scraper-router.js
-│   ├── utils/              # Shared utilities
-│   │   └── utils.js
-│   └── lib/                # Third-party libraries
-│       └── browser-polyfill.js
+│   ├── scrapers/
+│   │   ├── base/
+│   │   │   └── BaseScraper.js    # Abstract base class (template pattern)
+│   │   ├── config/
+│   │   │   ├── chatgpt.config.js # Platform selectors & settings
+│   │   │   ├── gemini.config.js
+│   │   │   └── claude.config.js
+│   │   ├── platforms/
+│   │   │   ├── ChatGPTScraper.js # Platform-specific implementations
+│   │   │   ├── GeminiScraper.js
+│   │   │   └── ClaudeScraper.js
+│   │   └── init.js               # Platform detection & initialization
+│   ├── utils-modules/            # Shared ES6 utilities
+│   │   ├── html.js               # HTML escaping
+│   │   ├── mime.js               # MIME type detection
+│   │   ├── media.js              # Media handling
+│   │   └── markdown.js           # Markdown conversion
+│   ├── content-script.js         # Entry point (dynamic imports)
+│   └── lib/
+│       └── browser-polyfill.js   # Browser API compatibility
 ├── assets/
-│   └── icons/              # Extension icons
-├── docs/                   # Documentation
-├── manifest.json           # Extension manifest
-├── package.json
+│   └── icons/                    # Extension icons
+├── docs/                         # Documentation
+│   ├── ES6_MIGRATION.md          # Architecture guide
+│   ├── TECHNICAL_GUIDE.md
+│   └── ...
+├── manifest.json                 # Manifest V3
 └── README.md
 ```
 
@@ -123,12 +141,17 @@ npm run package
 
 Comprehensive documentation is available in the [`docs/`](docs/) directory:
 
+- **[ES6 Migration Guide](docs/ES6_MIGRATION.md)** - ⭐ NEW: Modern architecture, template pattern, extending scrapers
 - [Technical Guide](docs/TECHNICAL_GUIDE.md) - Architecture and implementation details
 - [Quickstart Guide](docs/QUICKSTART.md) - Getting started quickly
 - [Setup Instructions](docs/SETUP_INSTRUCTIONS.md) - Detailed installation guide
 - [Gemini Scraper Guide](docs/GEMINI_SCRAPER_GUIDE.md) - Gemini-specific scraping details
 - [Router Guide](docs/ROUTER_GUIDE.md) - Platform detection system
 - [Scraper Comparison](docs/SCRAPER_COMPARISON.md) - Comparing different scrapers
+
+### For Developers
+
+Want to add support for a new AI platform? See the [ES6 Migration Guide](docs/ES6_MIGRATION.md#adding-a-new-platform) for step-by-step instructions. With the new architecture, adding a platform requires only ~180 lines of code!
 
 ## Browser Compatibility
 
@@ -178,15 +201,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap
 
-- [x] Complete ChatGPT scraper implementation (Beta)
-- [ ] Enhance ChatGPT scraper for PDF file extraction
-- [ ] Complete Claude scraper implementation
+### v3.0 (Current) ✅
+- [x] ES6 modules architecture migration
+- [x] Template method pattern with BaseScraper
+- [x] Complete ChatGPT scraper implementation
+- [x] Complete Gemini scraper implementation
+- [x] Complete Claude scraper implementation
+- [x] Preview/artifact extraction (Claude, Gemini)
+- [x] 70% code reduction through shared utilities
+
+### v3.1 (Planned)
 - [ ] Complete Meta AI scraper implementation
+- [ ] Enhance ChatGPT scraper for PDF file extraction
+- [ ] Add Gemini shared links enhancement
 - [ ] Add export templates customization
-- [ ] Add conversation search/filter
-- [ ] Add batch export functionality
-- [ ] Add cloud storage integration (optional)
-- [ ] Add conversation statistics dashboard
+
+### v4.0 (Future)
+- [ ] Conversation search/filter within extension
+- [ ] Batch export functionality
+- [ ] Cloud storage integration (optional)
+- [ ] Conversation statistics dashboard
+- [ ] Export scheduling/automation
 
 ---
 

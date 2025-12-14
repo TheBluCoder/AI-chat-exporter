@@ -2,15 +2,40 @@
  * Claude Scraper
  * Platform-specific scraper for Claude's chat interface
  * Extends BaseScraper with Claude-specific extraction logic
- * Handles preview panels (artifacts) similar to Gemini's immersive documents
+ * Handles preview panels (artifacts) and inline code blocks
  */
 
 import { BaseScraper } from '../base/BaseScraper.js';
 import { CLAUDE_CONFIG } from '../config/claude.config.js';
+import { extractMedia } from '../../utils-modules/media.js';
 
 export class ClaudeScraper extends BaseScraper {
   constructor() {
     super(CLAUDE_CONFIG);
+  }
+
+  /**
+   * Wait for Claude's conversation container
+   * Override to handle Claude's specific container structure
+   * @returns {Promise<Element>}
+   */
+  async waitForContainer() {
+    console.log(`[${this.platform}-Scraper] Waiting for container...`);
+
+    const container = await this.waitForElement(this.selectors.CONVERSATION_CONTAINER, 10000);
+
+    if (!container) {
+      const broader = await this.waitForElement('[data-testid="chat-input-grid-container"]', 5000);
+      if (broader) {
+        console.warn('[${this.platform}-Scraper] Using body as fallback container');
+        return document.body;
+      }
+      throw new Error('Could not find chat container');
+    }
+
+    console.log(`[${this.platform}-Scraper] Chat container found`);
+    await this.sleep(this.scrollConfig.stabilityDelay || 1000);
+    return container;
   }
 
   /**
@@ -23,40 +48,52 @@ export class ClaudeScraper extends BaseScraper {
     const messages = [];
     let turnIndex = 0;
 
-    // Find all message turns
-    const messageTurns = container.querySelectorAll(this.selectors.MESSAGE_TURN);
-    console.log(`[${this.platform}-Scraper] Found ${messageTurns.length} message turns`);
+    const messageNodes = container.querySelectorAll(this.selectors.MESSAGE_TURN);
+    console.log(`[${this.platform}-Scraper] Found ${messageNodes.length} message nodes`);
 
-    for (const turn of messageTurns) {
+    for (const node of messageNodes) {
       try {
-        // Determine role based on content structure
-        // Claude uses different structures for user vs assistant messages
-        const isUserMessage = this.isUserMessage(turn);
-        const role = isUserMessage ? 'user' : 'model';
+        // Extract user message
+        const userQuery = node.querySelector(this.selectors.USER_QUERY);
+        if (userQuery) {
+          const userText = this.extractUserText(userQuery);
 
-        if (isUserMessage) {
-          const userText = this.extractUserText(turn);
-          const userMedia = this.extractUserMedia(turn);
+          // Extract user uploaded images
+          // Images are in a parent group element that contains both images and the message
+          const userMessageGroup = node.querySelector(this.selectors.USER_MESSAGE_GROUP);
+          let userMedia = null;
+
+          if (userMessageGroup) {
+            const imagesContainer = userMessageGroup.querySelector(this.selectors.USER_IMAGES_CONTAINER);
+            if (imagesContainer) {
+              userMedia = extractMedia(imagesContainer);
+              if (userMedia && userMedia.length > 0) {
+                console.log(`[${this.platform}-Scraper] Found ${userMedia.length} user uploaded image(s)`);
+                // Mark as user-uploaded rather than generated
+                userMedia.forEach(m => m.source = 'uploaded');
+              }
+            }
+          }
 
           if (userText || userMedia) {
             messages.push(this.createMessage({
-              role: 'user',
+              role: "user",
               content: userText,
               media: userMedia,
               turn_index: turnIndex,
             }));
           }
-        } else {
-          const modelText = this.extractModelText(turn);
-          const modelMedia = this.extractModelMedia(turn);
-          const previewDocs = await this.extractPreviewDocuments(turn);
+        }
 
-          if (modelText || modelMedia || (previewDocs && previewDocs.length > 0)) {
+        // Extract model response
+        const modelResponse = node.querySelector(this.selectors.MODEL_RESPONSE);
+        if (modelResponse) {
+          const modelText = await this.extractModelTextWithPreviews(modelResponse);
+
+          if (modelText) {
             messages.push(this.createMessage({
-              role: 'model',
+              role: "model",
               content: modelText,
-              media: modelMedia,
-              embedded_documents: previewDocs,
               turn_index: turnIndex,
             }));
           }
@@ -64,7 +101,7 @@ export class ClaudeScraper extends BaseScraper {
 
         turnIndex++;
       } catch (error) {
-        console.warn(`[${this.platform}-Scraper] Error parsing message turn ${turnIndex}:`, error);
+        console.warn(`[${this.platform}-Scraper] Error parsing message node ${turnIndex}:`, error);
       }
     }
 
@@ -72,86 +109,127 @@ export class ClaudeScraper extends BaseScraper {
   }
 
   /**
-   * Determine if a turn is a user message
-   * @param {Element} turn - Message turn element
-   * @returns {boolean} True if user message
+   * Extract model text including inline code blocks and preview panels
+   * All code is formatted as markdown code blocks in the content
+   * @param {Element} modelResponseElement - Model response element
+   * @returns {Promise<string>} Extracted text with code blocks
    */
-  isUserMessage(turn) {
-    // Claude marks user messages differently - look for specific indicators
-    // This is a heuristic; adjust based on actual HTML structure
-    const hasUserIndicator = turn.querySelector('[data-is-user="true"]');
-    if (hasUserIndicator) return true;
+  async extractModelTextWithPreviews(modelResponseElement) {
+    if (!modelResponseElement) return '';
 
-    // Fallback: check if it has preview buttons (only assistant messages have these)
-    const hasPreviewButton = turn.querySelector(this.selectors.PREVIEW_BUTTON);
-    return !hasPreviewButton; // If no preview button, likely user message
+    // Clone to avoid modifying DOM
+    const clone = modelResponseElement.cloneNode(true);
+
+    // Extract preview panel codes FIRST and store them
+    const previewDivs = modelResponseElement.querySelectorAll(this.selectors.ARTIFACT_PREVIEW_DIV);
+    const previewCodesMap = new Map();
+
+    if (previewDivs.length > 0) {
+      console.log(`[${this.platform}-Scraper] Found ${previewDivs.length} preview panels`);
+
+      // Extract code for each preview panel
+      for (let i = 0; i < previewDivs.length; i++) {
+        const div = previewDivs[i];
+        const code = await this.extractSinglePreviewCode(div);
+        if (code) {
+          previewCodesMap.set(i, code);
+        }
+      }
+    }
+
+    // Now replace preview buttons in the clone with their extracted code
+    const clonePreviewDivs = clone.querySelectorAll(this.selectors.ARTIFACT_PREVIEW_DIV);
+    clonePreviewDivs.forEach((div, index) => {
+      const code = previewCodesMap.get(index);
+      if (code) {
+        // Replace the preview button with the markdown code block
+        div.replaceWith(document.createTextNode('\n\n' + code + '\n\n'));
+      } else {
+        // If extraction failed, just remove the button
+        div.remove();
+      }
+    });
+
+    // Process inline code blocks in the clone
+    const codeBlocks = clone.querySelectorAll('.code-block__code');
+    codeBlocks.forEach(codeBlock => {
+      const codeEl = codeBlock.querySelector('code');
+      if (!codeEl) return;
+
+      // Extract language from class (e.g., "language-python" -> "python")
+      const codeClass = codeEl.getAttribute('class') || '';
+      const languageMatch = codeClass.match(/language-(\w+)/);
+      const language = languageMatch ? languageMatch[1] : '';
+
+      // Get code content
+      const codeContent = codeEl.innerText || codeEl.textContent;
+
+      // Create markdown code block
+      const markdownBlock = `\n\`\`\`${language}\n${codeContent}\n\`\`\`\n`;
+
+      // Replace the code block element with markdown text
+      codeBlock.replaceWith(document.createTextNode(markdownBlock));
+    });
+
+    // Get the text content
+    let text = clone.innerText.trim();
+
+    return text;
   }
 
   /**
-   * Extract preview documents by clicking preview buttons
-   * Similar to Gemini's immersive documents
-   * @param {Element} modelTurnElement - The model turn element
-   * @returns {Promise<Array|null>} Array of preview documents or null
+   * Extract code from a single preview panel by clicking it
+   * @param {Element} previewDiv - Preview button element
+   * @returns {Promise<string|null>} Markdown-formatted code block or null
    */
-  async extractPreviewDocuments(modelTurnElement) {
-    if (!modelTurnElement) return null;
+  async extractSinglePreviewCode(previewDiv) {
+    try {
+      const titleEl = previewDiv.querySelector('.line-clamp-1');
+      const title = titleEl ? titleEl.textContent.trim() : 'Code';
 
-    const previewButtons = modelTurnElement.querySelectorAll(this.selectors.PREVIEW_BUTTON);
-    if (previewButtons.length === 0) return null;
+      console.log(`[${this.platform}-Scraper] Clicking preview: "${title}"`);
 
-    console.log(`[${this.platform}-Scraper] Found ${previewButtons.length} preview buttons`);
-    const documents = [];
+      // Click to open panel
+      previewDiv.click();
+      await this.sleep(2000);
 
-    for (const button of previewButtons) {
-      try {
-        // Get preview title from the artifact block
-        const artifactBlock = button.querySelector(this.selectors.ARTIFACT_BLOCK);
-        const titleEl = artifactBlock?.querySelector(this.selectors.PREVIEW_TITLE);
-        const title = titleEl?.innerText.trim() || 'Preview Document';
+      // Find the code block in the panel - must use querySelectorAll to avoid
+      // matching inline code blocks in the main conversation
+      // The panel's code block has unique styling: !rounded-none, min-h-full, etc.
+      const allCodeBlocks = document.querySelectorAll(this.selectors.ARTIFACT_CONTENT);
+      let panelCodeEl = null;
 
-        console.log(`[${this.platform}-Scraper] Processing preview: "${title}"`);
+      // Find the code block that's within the panel (has full-height styling)
+      for (const codeBlock of allCodeBlocks) {
+        const classList = codeBlock.className || '';
+        // Panel code blocks have specific classes that inline blocks don't
+        if (classList.includes('min-h-full') || classList.includes('!rounded-none')) {
+          panelCodeEl = codeBlock;
+          break;
+        }
+      }
 
-        // Click the preview button to open panel
-        button.click();
-        await this.sleep(2000);
+      if (panelCodeEl) {
+        const codeEl = panelCodeEl.querySelector('code');
+        if (codeEl) {
+          // Extract language
+          const codeClass = codeEl.getAttribute('class') || '';
+          const languageMatch = codeClass.match(/language-(\w+)/);
+          const language = languageMatch ? languageMatch[1] : '';
 
-        // Wait for preview panel to appear
-        const panel = document.querySelector(this.selectors.PREVIEW_PANEL);
-        if (panel) {
-          let codeContent = null;
+          // Get code content
+          const codeContent = codeEl.innerText || codeEl.textContent;
 
-          // Try to find code block
-          const codeBlock = panel.querySelector(this.selectors.PREVIEW_CODE);
-          if (codeBlock) {
-            codeContent = codeBlock.innerText || codeBlock.textContent;
-          }
+          // Format as markdown with title comment
+          const markdownBlock = `\`\`\`${language}\n# ${title}\n${codeContent}\n\`\`\``;
 
-          // Fallback: get all text content from panel
-          if (!codeContent) {
-            console.log(`[${this.platform}-Scraper] Code block not found, extracting panel text`);
-            codeContent = panel.innerText || panel.textContent;
-          }
+          console.log(`[${this.platform}-Scraper] Extracted ${codeContent.length} chars of ${language} code`);
 
-          if (codeContent) {
-            console.log(`[${this.platform}-Scraper] Extracted ${codeContent.length} chars from preview`);
-            documents.push({
-              title: title,
-              content: codeContent.trim(),
-              source: 'preview_document',
-              type: 'text/code'
-            });
-          }
-
-          // Close panel - try multiple methods
-          const closeButton = panel.querySelector('button[aria-label="Close"]') ||
-                             panel.querySelector('button[aria-label="close"]') ||
-                             panel.querySelector('.close-button');
-
-          if (closeButton) {
-            closeButton.click();
-            await this.sleep(500);
+          // Close panel
+          const closeBtn = document.querySelector(this.selectors.ARTIFACT_CLOSE_BUTTON);
+          if (closeBtn) {
+            closeBtn.click();
           } else {
-            // Fallback: press Escape
             const escEvent = new KeyboardEvent('keydown', {
               key: 'Escape',
               code: 'Escape',
@@ -159,18 +237,21 @@ export class ClaudeScraper extends BaseScraper {
               which: 27,
               bubbles: true
             });
-            panel.dispatchEvent(escEvent);
-            await this.sleep(500);
+            document.dispatchEvent(escEvent);
           }
-        } else {
-          console.warn(`[${this.platform}-Scraper] Preview panel not found after clicking button`);
-        }
-      } catch (err) {
-        console.error(`[${this.platform}-Scraper] Error processing preview button:`, err);
-      }
-    }
 
-    return documents.length > 0 ? documents : null;
+          await this.sleep(1000);
+
+          return markdownBlock;
+        }
+      }
+
+      console.warn(`[${this.platform}-Scraper] Panel code block not found after clicking preview`);
+      return null;
+    } catch (err) {
+      console.error(`[${this.platform}-Scraper] Error processing preview:`, err);
+      return null;
+    }
   }
 }
 

@@ -1,56 +1,159 @@
-b83bb820decd33de:1 Loading the script 'https://www.googletagmanager.com/gtm.js?id=GTM-KKRLL9S' violates the following Content Security Policy directive: "script-src 'unsafe-inline' 'unsafe-eval' blob: data: https://www.googleadservices.com/pagead/conversion/ https://www.googletagmanager.com/gtag/js https://www.googletagmanager.com/gtag/destination https://www.google.com/js/bg/ https://www.gstatic.com/external_hosted/highlightjs/highlight.pack.js https://www.gstatic.com/monaco_editor/ https://fonts.gstatic.com/s/e/notoemoji/search/wrapper.js https://www.youtube.com/iframe_api https://translate.google.com/translate_a/element.js https://www-onepick-opensocial.googleusercontent.com/gadgets/js/rpc.js https://www.gstatic.com/_/mss/boq-one-google/_/ https://www.gstatic.com/og/_/js/ https://apis.google.com/js/api.js https://apis.google.com/js/client.js https://www.google.com/tools/feedback/chat_load.js https://www.google.com/tools/feedback/help_api.js https://www.google.com/tools/feedback/load.js https://www.google.com/tools/feedback/open.js https://www.google.com/tools/feedback/open_to_help_guide_lazy.js https://www.gstatic.com/feedback/js/ https://www.gstatic.com/feedback/js/help/prod/service/lazy.min.js https://www.gstatic.com/inproduct_help/api/main.min.js https://www.gstatic.com/inproduct_help/chatsupport/chatsupport_button_v2.js https://www.gstatic.com/inproduct_help/service/lazy.min.js https://www.gstatic.com/uservoice/feedback/client/web/live/ https://www.gstatic.com/uservoice/surveys/resources/prod/js/survey/ https://maps.googleapis.com/maps/api/js https://www.gstatic.com/_/mss/boq-bard-web/_/js/k=boq-bard-web.BardChatUi.en.-AHD9oji84I.2018.O/ https://apis.google.com/_/scs/abc-static/_/js/ https://maps.googleapis.com/maps-api-v3/api/js/ https://maps.googleapis.com/maps/vt https://maps.googleapis.com/maps/api/js/ https://maps.googleapis.com/maps/api/place/js/ https://www.youtube.com/s/player/ https://translate.googleapis.com/_/translate_http/_/js/". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The policy is report-only, so the violation has been logged but no further action has been taken.
 browser-polyfill.js:24 [Browser-Polyfill] Using chrome API (Chrome/Edge)
-content-script.js:8 [AI-Chat-Exporter] URL: https://gemini.google.com/app/b83bb820decd33de
-content-script.js:82 [AI-Chat-Exporter] Scraper initialization complete
-content-script.js:13  GET chrome-extension://invalid/ net::ERR_FAILED
-loadScrapers @ content-script.js:13
-(anonymous) @ content-script.js:25
-content-script.js:16 [AI-Chat-Exporter] Failed to load scrapers: TypeError: Failed to fetch dynamically imported module: chrome-extension://iefaelfebkfdiklonojcjiadhhfmbgjg/src/scrapers/init.js
-loadScrapers @ content-script.js:16
-await in loadScrapers
-(anonymous) @ content-script.js:25
-b83bb820decd33de:1 Loading the image 'https://www.google.ca/ads/ga-audiences?v=1&t=sr&slf_rd=1&_r=4&tid=G-BF8Q35BMLM&cid=951379282.1762321620&gtm=45je5ca1v9229664005z89113054662za20gzb9113054662zd9113054662&aip=1&dma=0&gcd=13l3l3l3l1l1&npa=0&frm=0&tag_exp=103116026~103200004~104527907~104528501~104684208~104684211~105391252~115583767~115938466~115938469~116184927~116184929~116217636~116217638~116251938~116251940&z=273136095' violates the following Content Security Policy directive: "img-src https://*.google.com https://*.googleusercontent.com https://*.gstatic.com https://*.youtube.com https://*.youtube-nocookie.com https://*.ytimg.com https://*.ggpht.com https://bard.datacommons.org blob: data: https://*.googleapis.com https://*.googletagmanager.com https://www.google.com https://google.com https://googleads.g.doubleclick.net". The action has been blocked.
-prepare.js:1 This document requires 'TrustedScript' assignment. The action has been blocked.
-c @ prepare.js:1
-o @ prepare.js:1
-n @ prepare.js:1
-(anonymous) @ prepare.js:1
-setInterval
-Lt @ prepare.js:1
-$n @ prepare.js:1
-init @ prepare.js:1
-(anonymous) @ prepare.js:1
-(anonymous) @ prepare.js:1
-prepare.js:1 This document requires 'TrustedScript' assignment. The action has been blocked.
-c @ prepare.js:1
-o @ prepare.js:1
-n @ prepare.js:1
-(anonymous) @ prepare.js:1
-setInterval
-Lt @ prepare.js:1
-$n @ prepare.js:1
-init @ prepare.js:1
-(anonymous) @ prepare.js:1
-(anonymous) @ prepare.js:1
-prepare.js:1 This document requires 'TrustedScript' assignment. The action has been blocked.
-c @ prepare.js:1
-o @ prepare.js:1
-n @ prepare.js:1
-(anonymous) @ prepare.js:1
-setInterval
-Lt @ prepare.js:1
-$n @ prepare.js:1
-init @ prepare.js:1
-(anonymous) @ prepare.js:1
-(anonymous) @ prepare.js:1
-prepare.js:1 This document requires 'TrustedScript' assignment. The action has been blocked.
-c @ prepare.js:1
-o @ prepare.js:1
-n @ prepare.js:1
-(anonymous) @ prepare.js:1
-setInterval
-Lt @ prepare.js:1
-$n @ prepare.js:1
-init @ prepare.js:1
-(anonymous) @ prepare.js:1
-(anonymous) @ prepare.js:1
+content-script.js:14 [AI-Chat-Exporter] Loading module from: chrome-extension://iefaelfebkfdiklonojcjiadhhfmbgjg/src/scrapers/init.js
+content-script.js:87 [AI-Chat-Exporter] Scraper initialization complete
+92351-d59c57c19600e348.js:13 [SERVICE_WORKER] Found 1 service worker(s), which are no longer used. Unregistering.
+(anonymous) @ 92351-d59c57c19600e348.js:13
+warn @ 64328-8efac1e696f16921.js:1
+(anonymous) @ layout-5226fb9a87e91bb5.js:1
+await in (anonymous)
+(anonymous) @ layout-5226fb9a87e91bb5.js:1
+o1 @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+ux @ 87c73c54-41cd93e91d16f29c.js:1
+uE @ 87c73c54-41cd93e91d16f29c.js:1
+i_ @ 87c73c54-41cd93e91d16f29c.js:1
+iT @ 87c73c54-41cd93e91d16f29c.js:1
+iG @ 87c73c54-41cd93e91d16f29c.js:1
+iW @ 87c73c54-41cd93e91d16f29c.js:1
+iN @ 87c73c54-41cd93e91d16f29c.js:1
+iz @ 87c73c54-41cd93e91d16f29c.js:1
+ii @ 87c73c54-41cd93e91d16f29c.js:1
+iu @ 87c73c54-41cd93e91d16f29c.js:1
+iX @ 87c73c54-41cd93e91d16f29c.js:1
+j @ 92351-d59c57c19600e348.js:18
+content-script.js:17 [AI-Chat-Exporter] Module loaded successfully
+init.js:50 [Scraper-Init] Detected platform: Claude (Active Chat)
+frame-modern.648b2ed1.js:1 [Intercom] Launcher is disabled in settings or current page does not match display conditions
+content-script.js:35 [AI-Chat-Exporter] Received message: SCRAPE_PAGE
+BaseScraper.js:301 [Claude-Scraper] Element not found: main
+waitForElement @ BaseScraper.js:301
+await in waitForElement
+waitForContainer @ BaseScraper.js:83
+scrape @ BaseScraper.js:50
+window.runScrape @ init.js:86
+(anonymous) @ content-script.js:41
+BaseScraper.js:71 [Claude-Scraper] Scrape error: Error: Could not find conversation container
+    at ClaudeScraper.scrape (BaseScraper.js:52:15)
+    at async window.runScrape (init.js:86:20)
+scrape @ BaseScraper.js:71
+await in scrape
+window.runScrape @ init.js:86
+(anonymous) @ content-script.js:41
+init.js:101 [Scraper-Init] Runtime message error: {message: 'Could not establish connection. Receiving end does not exist.'}
+(anonymous) @ init.js:101
