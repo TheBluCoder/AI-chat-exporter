@@ -108,12 +108,6 @@ function showSuccess(result, durationMs) {
   console.log("Export successful:", result);
 }
 
-// File utilities are now imported from utils.js
-// - formatBytes()
-// - copyToClipboard()
-// - downloadFile()
-// - generateFilename()
-
 /**
  * Handle export button click
  */

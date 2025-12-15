@@ -39,6 +39,43 @@ export class ClaudeScraper extends BaseScraper {
   }
 
   /**
+   * Extract text from user message including code blocks
+   * Override to handle code blocks in user messages
+   * @param {Element} element - User message element
+   * @returns {string} Extracted text with code blocks as markdown
+   */
+  extractUserText(element) {
+    if (!element) return '';
+
+    // Clone to avoid modifying DOM
+    const clone = element.cloneNode(true);
+
+    // Process code blocks in the clone
+    const codeBlocks = clone.querySelectorAll('.code-block__code');
+    codeBlocks.forEach(codeBlock => {
+      const codeEl = codeBlock.querySelector('code');
+      if (!codeEl) return;
+
+      // Extract language from class (e.g., "language-python" -> "python")
+      const codeClass = codeEl.getAttribute('class') || '';
+      const languageMatch = codeClass.match(/language-(\w+)/);
+      const language = languageMatch ? languageMatch[1] : '';
+
+      // Get code content
+      const codeContent = codeEl.innerText || codeEl.textContent;
+
+      // Create markdown code block
+      const markdownBlock = `\n\`\`\`${language}\n${codeContent}\n\`\`\`\n`;
+
+      // Replace the code block element with markdown text
+      codeBlock.replaceWith(document.createTextNode(markdownBlock));
+    });
+
+    // Get the text content
+    return clone.innerText.trim();
+  }
+
+  /**
    * Extract all messages from Claude conversation
    * Override to handle Claude's message structure and preview panels
    * @param {Element} container - Conversation container
