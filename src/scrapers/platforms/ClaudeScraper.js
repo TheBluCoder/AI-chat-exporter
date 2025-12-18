@@ -148,7 +148,7 @@ export class ClaudeScraper extends BaseScraper {
                 let userPastedText = '';
                 if (userPastedQuery) {
                     console.log(`[${this.platform}-Scraper] Found user pasted query`);
-                    userPastedText = this.extractUserPastedText(userPastedQuery);
+                    userPastedText = await this.extractUserPastedText(userPastedQuery);
                 }
                 if (userQuery) {
                     const userText = this.extractUserText(userQuery);
@@ -215,33 +215,88 @@ export class ClaudeScraper extends BaseScraper {
         if (!element) return '';
         console.log(`[${this.platform}-Scraper] Found user pasted query`);
 
-        element.querySelector('button').click();
-        await this.sleep(1000);
-
-        // 1. Locate the stable anchor (the Close button)
-        const closeButton = document.querySelector('[data-testid="close-file-preview"]');
-        console.log(`[${this.platform}-Scraper] Found close button`);
-
-        if (!closeButton) {
-            console.log(`[${this.platform}-Scraper] No close button found`);
-            return '';
+        // Get fallback text from the thumbnail
+        let fallbackText = '';
+        const thumbnailTextEl = element.querySelector('p');
+        if (thumbnailTextEl) {
+            fallbackText = thumbnailTextEl.innerText.trim();
         }
 
-        // 2. Navigate to the common container of the preview window
-        // Looking for the parent that holds both the header and the content
-        const previewContainer = closeButton.closest('.flex-col');
-
-        // 3. Find the div with font-mono inside that container
-        // This ignores headers and metadata, getting only the code/text
-        const codeDiv = previewContainer.querySelector('.font-mono');
-        if (!codeDiv) {
-            console.log(`[${this.platform}-Scraper] No code div found`);
-            return '';
+        // First, check if a preview panel is already open (for static HTML files)
+        const existingPreview = document.querySelector('[data-testid="close-file-preview"]');
+        if (existingPreview) {
+            console.log(`[${this.platform}-Scraper] Found existing open preview panel`);
+            const previewContainer = existingPreview.closest('.flex-col');
+            if (previewContainer) {
+                const codeDiv = previewContainer.querySelector('.font-mono');
+                if (codeDiv) {
+                    const extractedText = codeDiv.innerText.trim();
+                    if (extractedText) {
+                        console.log(`[${this.platform}-Scraper] Successfully extracted from existing preview`);
+                        return extractedText;
+                    }
+                }
+            }
         }
 
-        closeButton.click();
+        // Try to click the button to open preview (for live pages)
+        try {
+            const button = element.querySelector('button');
+            if (!button) {
+                console.warn(`[${this.platform}-Scraper] No button found in pasted element, using fallback`);
+                return fallbackText || '[Pasted content - unable to extract]';
+            }
 
-        return codeDiv ? codeDiv.innerText : '';
+            button.click();
+            await this.sleep(1500);
+
+            // Look for the close button
+            const closeButton = document.querySelector('[data-testid="close-file-preview"]');
+            if (!closeButton) {
+                console.warn(`[${this.platform}-Scraper] Preview did not open after clicking, using fallback`);
+                return fallbackText || '[Pasted content - unable to extract]';
+            }
+
+            // Navigate to preview container
+            const previewContainer = closeButton.closest('.flex-col');
+            if (!previewContainer) {
+                console.warn(`[${this.platform}-Scraper] Preview container not found`);
+                closeButton.click();
+                return fallbackText || '[Pasted content - unable to extract]';
+            }
+
+            // Extract text from font-mono div
+            const codeDiv = previewContainer.querySelector('.font-mono');
+            if (!codeDiv) {
+                console.warn(`[${this.platform}-Scraper] No content div found in preview`);
+                closeButton.click();
+                return fallbackText || '[Pasted content - unable to extract]';
+            }
+
+            const extractedText = codeDiv.innerText.trim();
+
+            // Close the preview
+            closeButton.click();
+            await this.sleep(500);
+
+            if (!extractedText) {
+                console.warn(`[${this.platform}-Scraper] Extracted text was empty, using fallback`);
+                return fallbackText || '[Pasted content - unable to extract]';
+            }
+
+            console.log(`[${this.platform}-Scraper] Successfully extracted ${extractedText.length} chars from preview`);
+            return extractedText;
+
+        } catch (error) {
+            console.error(`[${this.platform}-Scraper] Error extracting pasted text:`, error);
+            // Try to close preview if it's open
+            try {
+                const closeBtn = document.querySelector('[data-testid="close-file-preview"]');
+                if (closeBtn) closeBtn.click();
+            } catch (e) { /* ignore */ }
+
+            return fallbackText || '[Pasted content - unable to extract]';
+        }
     }
 
     /**
