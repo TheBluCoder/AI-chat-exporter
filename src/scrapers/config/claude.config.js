@@ -3,8 +3,8 @@ export const CLAUDE_CONFIG = {
 
     selectors: {
         // Main container
-        CONTAINER: 'div.flex-1.flex.flex-col.h-full', // Generic container
-        CHAT_CONTAINER: 'div.flex-1.flex.flex-col.h-full', // Helper to find the chat
+        CONTAINER: '', // Generic container
+        CHAT_CONTAINER: 'div.overflow-y-scroll.overflow-x-hidden.pt-6.flex-1', // Helper to find the chat
 
         // This is the specific container that holds the message list
         CONVERSATION_CONTAINER: 'div.flex-1.flex.flex-col.px-4.max-w-3xl.mx-auto.w-full.pt-1',
@@ -14,6 +14,9 @@ export const CLAUDE_CONFIG = {
         MESSAGE_TURN: 'div[data-test-render-count]',
 
         USER_QUERY: 'div[data-testid="user-message"]',
+        //User pasted text
+        USER_PASTED_QUERY: 'div[data-testid="file-thumbnail"]',
+        //
         USER_QUERY_CONTENT: 'div.font-user-message',
 
         // User uploaded images (appear before user message text)
@@ -24,7 +27,7 @@ export const CLAUDE_CONFIG = {
 
         // Artifacts / Previews
         // The trigger is a div with role="button" and aria-label="Preview contents"
-        ARTIFACT_PREVIEW_DIV: 'div[role="button"][aria-label="Preview contents"]',
+        ARTIFACT_PREVIEW_DIV: 'div[aria-label="Preview contents"]',
         // The content is in a code block
         ARTIFACT_CONTENT: '.code-block__code',
         // The close button for the side panel
@@ -32,6 +35,7 @@ export const CLAUDE_CONFIG = {
 
         // Fallbacks / Other
         MODEL_TEXT: '.font-claude-response',
+        LINE_NUMBERS: '.react-syntax-highlighter-line-number',
     },
 
     scrollConfig: {
