@@ -7,6 +7,13 @@
 import { BaseScraper } from '../base/BaseScraper.js';
 import { CHATGPT_CONFIG } from '../config/chatgpt.config.js';
 
+// Constants
+const DEFAULT_SCROLL_INCREMENT = 0.8;
+const DEFAULT_TURN_INDEX = 0;
+const CONTENT_LOAD_DELAY_MS = 300;  // Reduced from 500ms
+const SCROLL_POSITION_TOLERANCE = 10;
+const LOG_TEXT_PREVIEW_LENGTH = 50;
+
 export class ChatGPTScraper extends BaseScraper {
   constructor() {
     super(CHATGPT_CONFIG);
@@ -23,7 +30,7 @@ export class ChatGPTScraper extends BaseScraper {
 
     const scrollContainer = this.findScrollContainer(container);
     const allMessages = new Map(); // Use Map to deduplicate by turn_id
-    const scrollIncrement = scrollContainer.clientHeight * (this.scrollConfig.scrollIncrement || 0.8);
+    const scrollIncrement = scrollContainer.clientHeight * (this.scrollConfig.scrollIncrement || DEFAULT_SCROLL_INCREMENT);
     let currentScroll = 0;
     const maxScroll = scrollContainer.scrollHeight;
 
@@ -38,7 +45,7 @@ export class ChatGPTScraper extends BaseScraper {
         if (!turnId || allMessages.has(turnId)) continue;
 
         const role = turn.getAttribute('data-turn');
-        const turnIndex = parseInt(turn.getAttribute('data-testid')?.split('-').pop() || '0');
+        const turnIndex = parseInt(turn.getAttribute('data-testid')?.split('-').pop() || DEFAULT_TURN_INDEX);
 
         try {
           if (role === 'user') {
@@ -82,10 +89,10 @@ export class ChatGPTScraper extends BaseScraper {
       scrollContainer.scrollTop = currentScroll;
 
       // Wait for new content to load
-      await this.sleep(500);
+      await this.sleep(CONTENT_LOAD_DELAY_MS);
 
       // Check if we've actually scrolled (might be at bottom)
-      if (scrollContainer.scrollTop < currentScroll - 10) {
+      if (scrollContainer.scrollTop < currentScroll - SCROLL_POSITION_TOLERANCE) {
         console.log(`[${this.platform}-Scraper] Reached bottom of conversation`);
         break;
       }
@@ -146,7 +153,7 @@ export class ChatGPTScraper extends BaseScraper {
     // Get the final text
     const text = clone.innerText.trim();
 
-    console.log(`[${this.platform}-Scraper] Model text extracted (${text.length} chars): ${text.substring(0, 50)}...`);
+    console.log(`[${this.platform}-Scraper] Model text extracted (${text.length} chars): ${text.substring(0, LOG_TEXT_PREVIEW_LENGTH)}...`);
     return text;
   }
 

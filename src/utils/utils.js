@@ -1,138 +1,12 @@
 /**
- * Shared Utility Functions
- * Common utilities used across all scrapers and popup
+ * Shared Utility Functions for Popup
+ * Only contains functions used by popup.js
+ * Note: Scrapers use utils-modules/ ES6 modules instead
  */
 
 // ============================================================================
-// CONFIGURATION
+// MIME TYPE DETECTION (for popup's PDF/Markdown export)
 // ============================================================================
-
-const UTILS_CONFIG = {
-  ELEMENT_WAIT_TIMEOUT: 15000,
-  CONTENT_STABLE_MS: 800,
-  CONTENT_TIMEOUT: 10000,
-  RENDER_DELAY: 500,
-  SCROLL_DELAY: 1500,
-  MAX_SCROLL_ATTEMPTS: 10,
-};
-
-// ============================================================================
-// DOM UTILITIES
-// ============================================================================
-
-/**
- * Wait for an element to appear in the DOM
- * @param {string} selector - CSS selector to wait for
- * @param {number} timeout - Maximum wait time in milliseconds
- * @returns {Promise<Element>} The found element
- */
-function waitForElement(selector, timeout = UTILS_CONFIG.ELEMENT_WAIT_TIMEOUT) {
-  return new Promise((resolve, reject) => {
-    const existingElement = document.querySelector(selector);
-    if (existingElement) {
-      return resolve(existingElement);
-    }
-
-    const observer = new MutationObserver(() => {
-      const element = document.querySelector(selector);
-      if (element) {
-        observer.disconnect();
-        clearTimeout(timeoutId);
-        resolve(element);
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-    });
-
-    const timeoutId = setTimeout(() => {
-      observer.disconnect();
-      reject(new Error(`Timeout waiting for selector: ${selector}`));
-    }, timeout);
-  });
-}
-
-/**
- * Wait until element's text content stabilizes (stops changing)
- * @param {Element} element - The element to monitor
- * @param {number} stableMs - Time content must remain stable
- * @param {number} timeout - Maximum wait time
- * @returns {Promise<boolean>} True if content stabilized, false if timeout
- */
-async function waitForStableContent(element, stableMs = UTILS_CONFIG.CONTENT_STABLE_MS, timeout = UTILS_CONFIG.CONTENT_TIMEOUT) {
-  const startTime = Date.now();
-  let previousText = element.innerText;
-
-  while (Date.now() - startTime < timeout) {
-    await new Promise((resolve) => setTimeout(resolve, stableMs));
-    const currentText = element.innerText;
-
-    if (currentText === previousText) {
-      return true;
-    }
-
-    previousText = currentText;
-  }
-
-  return false;
-}
-
-/**
- * Get list of potentially relevant selectors for debugging
- * @param {Array<string>} selectors - Optional array of selectors to check
- * @returns {Array} List of available selectors
- */
-function getAvailableSelectors(selectors = null) {
-  const defaultSelectors = [
-    'section',
-    '[class*="chat"]',
-    '[class*="conversation"]',
-    '[class*="message"]',
-  ];
-
-  const selectorsToCheck = selectors || defaultSelectors;
-
-  return selectorsToCheck.filter(selector => {
-    try {
-      return document.querySelector(selector) !== null;
-    } catch (e) {
-      return false;
-    }
-  });
-}
-
-// ============================================================================
-// MEDIA UTILITIES
-// ============================================================================
-
-/**
- * Detect media type from URL or file extension
- * @param {string} url - URL or filename to analyze
- * @returns {string|null} Media type or null
- */
-function getMediaType(url) {
-  if (!url) return null;
-
-  const cleanUrl = url.split("?")[0].toLowerCase();
-
-  const patterns = {
-    image: /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)$/i,
-    pdf: /\.(pdf)$/i,
-    document: /\.(doc|docx|xls|xlsx|ppt|pptx)$/i,
-    code: /\.(py|js|java|cpp|c|ts|jsx|tsx|go|rs|rb|php|swift|kt|cs|h|hpp)$/i,
-    text: /\.(md|markdown|txt|log|csv|json|xml|yaml|yml|html|css)$/i,
-  };
-
-  for (const [type, pattern] of Object.entries(patterns)) {
-    if (pattern.test(cleanUrl)) {
-      return type === 'code' || type === 'text' ? 'document' : type;
-    }
-  }
-
-  return null;
-}
 
 /**
  * Detect MIME type from base64 data signature (magic bytes)
@@ -236,71 +110,6 @@ async function urlToBase64(url) {
   }
 }
 
-/**
- * Extract media (images and file links) from a DOM element
- * @param {Element} element - The element to extract media from
- * @returns {Array|null} Array of media objects or null
- */
-function extractMedia(element) {
-  if (!element) return null;
-
-  const media = [];
-  const seenUrls = new Set();
-
-  // Extract images
-  element.querySelectorAll("img").forEach((img) => {
-    let src = img.src ||
-      img.getAttribute("data-src") ||
-      img.dataset.src;
-
-    // Handle srcset attribute
-    if (!src && img.srcset) {
-      const srcsetParts = img.srcset.split(",")[0].trim().split(" ");
-      src = srcsetParts[0];
-    }
-
-    // Filter out data URIs and duplicates
-    if (src && !src.startsWith("data:") && !seenUrls.has(src)) {
-      seenUrls.add(src);
-      media.push({
-        url: src,
-        type: "image",
-        name: img.alt || img.title || null,
-        source: "generated",
-      });
-    }
-  });
-
-  // Extract file links
-  element.querySelectorAll("a[href]").forEach((anchor) => {
-    const href = anchor.href;
-
-    // Skip invalid or unwanted links
-    if (!href ||
-      href.startsWith("#") ||
-      href.startsWith("javascript:") ||
-      seenUrls.has(href)) {
-      return;
-    }
-
-    const mediaType = getMediaType(href);
-    if (mediaType) {
-      seenUrls.add(href);
-      const linkText = (anchor.innerText || anchor.textContent || "").trim();
-      const fileName = href.split("/").pop().split("?")[0];
-
-      media.push({
-        url: href,
-        type: mediaType,
-        name: linkText || fileName,
-        source: "linked",
-      });
-    }
-  });
-
-  return media.length > 0 ? media : null;
-}
-
 // ============================================================================
 // FILE UTILITIES
 // ============================================================================
@@ -315,17 +124,6 @@ function generateFilename(result, extension = 'json') {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const prefix = result.success ? "chat-export" : "chat-export-failed";
   return `${prefix}-${timestamp}.${extension}`;
-}
-
-/**
- * Format file size for display
- * @param {number} bytes - Number of bytes
- * @returns {string} Formatted string
- */
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 /**
@@ -367,7 +165,7 @@ async function copyToClipboard(text) {
 }
 
 // ============================================================================
-// MARKDOWN CONVERSION
+// HTML UTILITIES
 // ============================================================================
 
 /**
@@ -411,6 +209,25 @@ function escapeHtmlForMarkdown(text) {
 
   return parts.join('');
 }
+
+/**
+ * Escape HTML entities for safe insertion into HTML
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped HTML
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================================
+// MARKDOWN CONVERSION
+// ============================================================================
 
 /**
  * Convert scraped chat data to Markdown format with base64 embedded media
@@ -492,21 +309,6 @@ async function convertToMarkdown(result) {
 // ============================================================================
 // PDF EXPORT
 // ============================================================================
-
-/**
- * Escape HTML entities for safe insertion into HTML
- * @param {string} text - Text to escape
- * @returns {string} Escaped HTML
- */
-function escapeHtml(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 /**
  * Export chat data to PDF via print dialog
@@ -635,22 +437,13 @@ async function exportToPDF(result) {
 }
 
 // ============================================================================
-// EXPORT ALL UTILITIES
+// EXPORT ALL UTILITIES TO WINDOW (for popup.html)
 // ============================================================================
 
-// Make all utilities available globally
 if (typeof window !== 'undefined') {
-  window.UTILS_CONFIG = UTILS_CONFIG;
-  window.waitForElement = waitForElement;
-  window.waitForStableContent = waitForStableContent;
-  window.getAvailableSelectors = getAvailableSelectors;
-  window.getMediaType = getMediaType;
-  window.urlToBase64 = urlToBase64;
-  window.extractMedia = extractMedia;
-  window.generateFilename = generateFilename;
-  window.formatBytes = formatBytes;
-  window.downloadFile = downloadFile;
   window.copyToClipboard = copyToClipboard;
+  window.downloadFile = downloadFile;
+  window.generateFilename = generateFilename;
   window.convertToMarkdown = convertToMarkdown;
   window.exportToPDF = exportToPDF;
 }

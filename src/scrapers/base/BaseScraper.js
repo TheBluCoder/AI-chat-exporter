@@ -31,9 +31,9 @@ export class BaseScraper {
     this.selectors = config.selectors;
     this.scrollConfig = config.scrollConfig || {
       maxAttempts: 50,
-      delay: 1500,
-      stabilityDelay: 500,
-      stabilityTimeout: 8000,
+      delay: 800,              // Reduced from 1500ms
+      stabilityDelay: 300,     // Reduced from 500ms
+      stabilityTimeout: 5000,  // Reduced from 8000ms
     };
   }
 
@@ -134,7 +134,7 @@ export class BaseScraper {
       } else {
         // Double-check with wiggle
         scrollContainer.scrollTop = 10;
-        await this.sleep(300);
+        await this.sleep(150);  // Reduced from 300ms
         scrollContainer.scrollTop = 0;
 
         if (scrollContainer.scrollHeight <= previousHeight) {

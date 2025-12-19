@@ -9,6 +9,15 @@ import { GEMINI_CONFIG } from '../config/gemini.config.js';
 import { getMediaType } from '../../utils-modules/mime.js';
 import { extractMedia } from '../../utils-modules/media.js';
 
+// Constants
+const CONTAINER_WAIT_TIMEOUT_MS = 10000;
+const DEFAULT_STABILITY_DELAY_MS = 500;
+const CHIP_PANEL_OPEN_DELAY_MS = 800;  // Reduced from 2000ms
+const EDITOR_WAIT_DELAY_MS = 600;       // Reduced from 1500ms
+const PANEL_CLOSE_DELAY_MS = 300;       // Reduced from 500ms
+const USER_FILE_PANEL_DELAY_MS = 800;   // Reduced from 2000ms
+const USER_FILE_CLOSE_DELAY_MS = 400;   // Reduced from 800ms
+
 export class GeminiScraper extends BaseScraper {
   constructor() {
     super(GEMINI_CONFIG);
@@ -20,7 +29,7 @@ export class GeminiScraper extends BaseScraper {
    * @returns {Promise<Element>}
    */
   async waitForContainer() {
-    const chatApp = await this.waitForElement(this.selectors.CHAT_CONTAINER, 10000);
+    const chatApp = await this.waitForElement(this.selectors.CHAT_CONTAINER, CONTAINER_WAIT_TIMEOUT_MS);
     if (!chatApp) {
       throw new Error('Could not find chat app container');
     }
@@ -28,7 +37,7 @@ export class GeminiScraper extends BaseScraper {
     console.log(`[${this.platform}-Scraper] Chat app found`);
 
     // Additional wait for rendering
-    await this.sleep(this.scrollConfig.stabilityDelay || 500);
+    await this.sleep(this.scrollConfig.stabilityDelay || DEFAULT_STABILITY_DELAY_MS);
 
     let container = chatApp.querySelector(this.selectors.CONVERSATION_CONTAINER);
     if (!container) {
@@ -246,16 +255,18 @@ export class GeminiScraper extends BaseScraper {
           chip.click();
         }
 
-        // Wait for panel
-        await this.sleep(2000);
-
-        const panel = document.querySelector(this.selectors.IMMERSIVE_PANEL);
+        // Wait for panel - check if already present first
+        let panel = document.querySelector(this.selectors.IMMERSIVE_PANEL);
+        if (!panel) {
+          await this.sleep(CHIP_PANEL_OPEN_DELAY_MS);
+          panel = document.querySelector(this.selectors.IMMERSIVE_PANEL);
+        }
         if (panel) {
           let editor = panel.querySelector(this.selectors.IMMERSIVE_EDITOR);
 
+          // Only wait if editor not found
           if (!editor) {
-            console.log(`[${this.platform}-Scraper] Editor not found immediately, waiting...`);
-            await this.sleep(1500);
+            await this.sleep(EDITOR_WAIT_DELAY_MS);
             editor = panel.querySelector(this.selectors.IMMERSIVE_EDITOR);
           }
 
@@ -290,11 +301,11 @@ export class GeminiScraper extends BaseScraper {
 
           if (closeBtn) {
             closeBtn.click();
-            await this.sleep(500);
+            await this.sleep(PANEL_CLOSE_DELAY_MS);
           } else {
             const escEvent = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true });
             panel.dispatchEvent(escEvent);
-            await this.sleep(500);
+            await this.sleep(PANEL_CLOSE_DELAY_MS);
           }
         } else {
           console.warn(`[${this.platform}-Scraper] Immersive panel not found after clicking chip`);
@@ -329,8 +340,13 @@ export class GeminiScraper extends BaseScraper {
         console.log(`[${this.platform}-Scraper] Processing user file: "${fileName}"`);
 
         button.click();
-        await this.sleep(2000);
-        const panel = document.querySelector(this.selectors.IMMERSIVE_PANEL);
+
+        // Check if panel already present before waiting
+        let panel = document.querySelector(this.selectors.IMMERSIVE_PANEL);
+        if (!panel) {
+          await this.sleep(USER_FILE_PANEL_DELAY_MS);
+          panel = document.querySelector(this.selectors.IMMERSIVE_PANEL);
+        }
 
         if (panel) {
           let content = '';
@@ -359,7 +375,7 @@ export class GeminiScraper extends BaseScraper {
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
           }
 
-          await this.sleep(800);
+          await this.sleep(USER_FILE_CLOSE_DELAY_MS);
         }
       } catch (err) {
         console.error(`[${this.platform}-Scraper] Error processing user file:`, err);

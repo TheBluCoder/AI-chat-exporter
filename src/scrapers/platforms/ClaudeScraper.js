@@ -9,6 +9,14 @@ import { BaseScraper } from '../base/BaseScraper.js';
 import { CLAUDE_CONFIG } from '../config/claude.config.js';
 import { extractMedia } from '../../utils-modules/media.js';
 
+// Constants
+const MIN_BACKTICKS = 3;
+const BACKTICK_INCREMENT = 1;
+const PREVIEW_OPEN_DELAY_MS = 600;   // Reduced from 1500ms
+const PREVIEW_CLOSE_DELAY_MS = 200;  // Reduced from 500ms
+const PANEL_OPEN_DELAY_MS = 400;     // Reduced from 1000ms
+const PANEL_CLOSE_DELAY_MS = 300;    // Reduced from 1000ms
+
 export class ClaudeScraper extends BaseScraper {
     constructor() {
         super(CLAUDE_CONFIG);
@@ -46,7 +54,7 @@ export class ClaudeScraper extends BaseScraper {
             maxBackticks = Math.max(...backtickMatches.map(m => m.length));
         }
         // Use at least 3, or max found + 1
-        return '`'.repeat(Math.max(3, maxBackticks + 1));
+        return '`'.repeat(Math.max(MIN_BACKTICKS, maxBackticks + BACKTICK_INCREMENT));
     }
 
     /**
@@ -248,10 +256,13 @@ export class ClaudeScraper extends BaseScraper {
             }
 
             button.click();
-            await this.sleep(1500);
 
-            // Look for the close button
-            const closeButton = document.querySelector('[data-testid="close-file-preview"]');
+            // Look for the close button - check if already present first
+            let closeButton = document.querySelector('[data-testid="close-file-preview"]');
+            if (!closeButton) {
+                await this.sleep(PREVIEW_OPEN_DELAY_MS);
+                closeButton = document.querySelector('[data-testid="close-file-preview"]');
+            }
             if (!closeButton) {
                 console.warn(`[${this.platform}-Scraper] Preview did not open after clicking, using fallback`);
                 return fallbackText || '[Pasted content - unable to extract]';
@@ -277,7 +288,7 @@ export class ClaudeScraper extends BaseScraper {
 
             // Close the preview
             closeButton.click();
-            await this.sleep(500);
+            await this.sleep(PREVIEW_CLOSE_DELAY_MS);
 
             if (!extractedText) {
                 console.warn(`[${this.platform}-Scraper] Extracted text was empty, using fallback`);
@@ -388,15 +399,26 @@ export class ClaudeScraper extends BaseScraper {
 
             // Click to open panel
             previewDiv.click();
-            await this.sleep(1000);
-            document.querySelector("button[data-testid='undefined-raw']").click();
-            await this.sleep(1000);
 
-            // Find the code block in the panel - must use querySelectorAll to avoid
-            // matching inline code blocks in the main conversation
-            // The panel's code block has unique styling: !rounded-none, min-h-full, etc.
-            const codeblockContainer = document.querySelector("#wiggle-file-content");
-            const codeBlock = codeblockContainer.querySelector(this.selectors.ARTIFACT_CONTENT);
+            // Wait for raw button if needed
+            let rawButton = document.querySelector("button[data-testid='undefined-raw']");
+            if (!rawButton) {
+                await this.sleep(PANEL_OPEN_DELAY_MS);
+                rawButton = document.querySelector("button[data-testid='undefined-raw']");
+            }
+
+            if (rawButton) {
+                rawButton.click();
+            }
+
+            // Wait for code container if needed
+            let codeblockContainer = document.querySelector("#wiggle-file-content");
+            if (!codeblockContainer) {
+                await this.sleep(PANEL_OPEN_DELAY_MS);
+                codeblockContainer = document.querySelector("#wiggle-file-content");
+            }
+
+            const codeBlock = codeblockContainer?.querySelector(this.selectors.ARTIFACT_CONTENT);
 
             if (codeBlock) {
                 const codeEl = codeBlock.querySelector('code');
@@ -438,7 +460,7 @@ export class ClaudeScraper extends BaseScraper {
                         document.dispatchEvent(escEvent);
                     }
 
-                    await this.sleep(1000);
+                    await this.sleep(PANEL_CLOSE_DELAY_MS);
 
                     return markdownBlock;
                 }

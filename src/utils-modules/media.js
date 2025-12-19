@@ -55,17 +55,20 @@ export async function urlToBase64(url) {
 
 /**
  * Extract media (images and file links) from a DOM element
+ * Converts images to base64 to avoid CORS issues during export
  * @param {Element} element - The element to extract media from
- * @returns {Array|null} Array of media objects or null
+ * @returns {Promise<Array|null>} Array of media objects or null
  */
-export function extractMedia(element) {
+export async function extractMedia(element) {
   if (!element) return null;
 
   const media = [];
   const seenUrls = new Set();
 
   // Extract images
-  element.querySelectorAll("img").forEach((img) => {
+  const images = Array.from(element.querySelectorAll("img"));
+
+  for (const img of images) {
     let src = img.src ||
       img.getAttribute("data-src") ||
       img.dataset.src;
@@ -79,14 +82,19 @@ export function extractMedia(element) {
     // Filter out data URIs and duplicates
     if (src && !src.startsWith("data:") && !seenUrls.has(src)) {
       seenUrls.add(src);
+
+      // Convert to base64 during extraction (avoids CORS issues later)
+      const base64 = await urlToBase64(src);
+
       media.push({
-        url: src,
+        url: src,  // Keep original URL as fallback
+        base64: base64,  // Base64 data URL (or null if conversion failed)
         type: "image",
         name: img.alt || img.title || null,
         source: "generated",
       });
     }
-  });
+  }
 
   return media.length > 0 ? media : null;
 }

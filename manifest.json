@@ -9,7 +9,9 @@
     "storage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://chatgpt.com/*",
+    "https://gemini.google.com/*",
+    "https://claude.ai/*"
   ],
   "action": {
     "default_popup": "src/popup/popup.html",

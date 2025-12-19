@@ -3,6 +3,13 @@
  * Manages the extension popup UI and interaction
  */
 
+import {
+  CACHE_VALIDITY_MS,
+  JSON_INDENT_SPACES,
+  MS_TO_SECONDS,
+  UI_FEEDBACK_TIMEOUT_MS
+} from './constants.js';
+
 // DOM elements
 const exportBtn = document.getElementById("exportBtn");
 const btnCopyJson = document.getElementById("btnCopyJson");
@@ -59,9 +66,8 @@ function extractChatId(url) {
  */
 function isCacheValid(timestamp) {
   if (!timestamp) return false;
-  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
   const now = Date.now();
-  return (now - timestamp) < TWELVE_HOURS_MS;
+  return (now - timestamp) < CACHE_VALIDITY_MS;
 }
 
 /**
@@ -203,7 +209,7 @@ function showSuccess(result, durationMs) {
 
   statMessages.textContent = messageCount;
   statMedia.textContent = mediaCount;
-  statDuration.textContent = (durationMs / 1000).toFixed(1) + "s";
+  statDuration.textContent = (durationMs / MS_TO_SECONDS).toFixed(1) + "s";
 
   // Show Grids
   statsGrid.classList.add("show");
@@ -285,7 +291,7 @@ async function handleExport() {
 async function handleCopyJson() {
   if (!lastResult) return;
 
-  const jsonString = JSON.stringify(lastResult, null, 2);
+  const jsonString = JSON.stringify(lastResult, null, JSON_INDENT_SPACES);
   const success = await copyToClipboard(jsonString);
   const originalHtml = btnCopyJson.innerHTML;
 
@@ -293,12 +299,12 @@ async function handleCopyJson() {
     btnCopyJson.innerHTML = `<span class="material-symbols-outlined">check</span> Copied!`;
     setTimeout(() => {
       btnCopyJson.innerHTML = originalHtml;
-    }, 2000);
+    }, UI_FEEDBACK_TIMEOUT_MS);
   } else {
     btnCopyJson.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
     setTimeout(() => {
       btnCopyJson.innerHTML = originalHtml;
-    }, 2000);
+    }, UI_FEEDBACK_TIMEOUT_MS);
   }
 }
 
@@ -308,7 +314,7 @@ async function handleCopyJson() {
 function handleDownloadJson() {
   if (!lastResult) return;
   const filename = generateFilename(lastResult, 'json');
-  const jsonString = JSON.stringify(lastResult, null, 2);
+  const jsonString = JSON.stringify(lastResult, null, JSON_INDENT_SPACES);
   downloadFile(jsonString, filename, "application/json");
 }
 
@@ -330,7 +336,7 @@ async function handleDownloadMd() {
   } catch (e) {
     console.error(e);
     btnDownloadMd.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
-    setTimeout(() => btnDownloadMd.innerHTML = originalHtml, 2000);
+    setTimeout(() => btnDownloadMd.innerHTML = originalHtml, UI_FEEDBACK_TIMEOUT_MS);
   }
 }
 
@@ -349,7 +355,7 @@ async function handleExportPdf() {
   } catch (e) {
     console.error(e);
     btnExportPdf.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
-    setTimeout(() => btnExportPdf.innerHTML = originalHtml, 2000);
+    setTimeout(() => btnExportPdf.innerHTML = originalHtml, UI_FEEDBACK_TIMEOUT_MS);
   }
 }
 
