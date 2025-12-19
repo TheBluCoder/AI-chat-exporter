@@ -5,6 +5,13 @@
  */
 
 // ============================================================================
+// CONSTANTS
+// ============================================================================
+
+// Delay before opening print dialog to ensure page renders properly
+const PRINT_DIALOG_DELAY_MS = 1000;
+
+// ============================================================================
 // MIME TYPE DETECTION (for popup's PDF/Markdown export)
 // ============================================================================
 
@@ -95,7 +102,6 @@ async function urlToBase64(url) {
           // Reconstruct data URL with correct MIME type
           if (detectedMime) {
             dataUrl = `data:${detectedMime};base64,${base64Data}`;
-            console.log(`[Utils] Corrected MIME type from ${blob.type} to ${detectedMime}`);
           }
         }
 
@@ -425,7 +431,7 @@ async function exportToPDF(result) {
         }).join('')}
       </div>
       <script>
-        window.onload = () => { setTimeout(() => { window.print(); }, 1000); };
+        window.onload = () => { setTimeout(() => { window.print(); }, ${PRINT_DIALOG_DELAY_MS}); };
       </script>
     </body>
     </html>

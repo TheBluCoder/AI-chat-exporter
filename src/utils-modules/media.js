@@ -38,7 +38,6 @@ export async function urlToBase64(url) {
           // Reconstruct data URL with correct MIME type
           if (detectedMime) {
             dataUrl = `data:${detectedMime};base64,${base64Data}`;
-            console.log(`[Media] Corrected MIME type from ${blob.type} to ${detectedMime}`);
           }
         }
 
@@ -55,20 +54,17 @@ export async function urlToBase64(url) {
 
 /**
  * Extract media (images and file links) from a DOM element
- * Converts images to base64 to avoid CORS issues during export
  * @param {Element} element - The element to extract media from
- * @returns {Promise<Array|null>} Array of media objects or null
+ * @returns {Array|null} Array of media objects or null
  */
-export async function extractMedia(element) {
+export function extractMedia(element) {
   if (!element) return null;
 
   const media = [];
   const seenUrls = new Set();
 
   // Extract images
-  const images = Array.from(element.querySelectorAll("img"));
-
-  for (const img of images) {
+  element.querySelectorAll("img").forEach((img) => {
     let src = img.src ||
       img.getAttribute("data-src") ||
       img.dataset.src;
@@ -82,19 +78,14 @@ export async function extractMedia(element) {
     // Filter out data URIs and duplicates
     if (src && !src.startsWith("data:") && !seenUrls.has(src)) {
       seenUrls.add(src);
-
-      // Convert to base64 during extraction (avoids CORS issues later)
-      const base64 = await urlToBase64(src);
-
       media.push({
-        url: src,  // Keep original URL as fallback
-        base64: base64,  // Base64 data URL (or null if conversion failed)
+        url: src,
         type: "image",
         name: img.alt || img.title || null,
         source: "generated",
       });
     }
-  }
+  });
 
   return media.length > 0 ? media : null;
 }

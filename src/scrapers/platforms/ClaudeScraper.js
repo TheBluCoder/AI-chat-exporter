@@ -8,14 +8,14 @@
 import { BaseScraper } from '../base/BaseScraper.js';
 import { CLAUDE_CONFIG } from '../config/claude.config.js';
 import { extractMedia } from '../../utils-modules/media.js';
+import { PREVIEW_CLOSE_DELAY_MS } from '../base/constants.js';
 
 // Constants
 const MIN_BACKTICKS = 3;
 const BACKTICK_INCREMENT = 1;
-const PREVIEW_OPEN_DELAY_MS = 600;   // Reduced from 1500ms
-const PREVIEW_CLOSE_DELAY_MS = 200;  // Reduced from 500ms
-const PANEL_OPEN_DELAY_MS = 400;     // Reduced from 1000ms
-const PANEL_CLOSE_DELAY_MS = 300;    // Reduced from 1000ms
+const PREVIEW_OPEN_DELAY_MS = 600;
+const PANEL_OPEN_DELAY_MS = 400;
+const PANEL_CLOSE_DELAY_MS = 300;
 
 export class ClaudeScraper extends BaseScraper {
     constructor() {
@@ -146,7 +146,6 @@ export class ClaudeScraper extends BaseScraper {
         let turnIndex = 0;
 
         const messageNodes = container.querySelectorAll(this.selectors.MESSAGE_TURN);
-        console.log(`[${this.platform}-Scraper] Found ${messageNodes.length} message nodes`);
 
         for (const node of messageNodes) {
             try {
@@ -155,7 +154,6 @@ export class ClaudeScraper extends BaseScraper {
                 const userPastedQuery = node.querySelector(this.selectors.USER_PASTED_QUERY);
                 let userPastedText = '';
                 if (userPastedQuery) {
-                    console.log(`[${this.platform}-Scraper] Found user pasted query`);
                     userPastedText = await this.extractUserPastedText(userPastedQuery);
                 }
                 if (userQuery) {
@@ -171,7 +169,6 @@ export class ClaudeScraper extends BaseScraper {
                         if (imagesContainer) {
                             userMedia = extractMedia(imagesContainer);
                             if (userMedia && userMedia.length > 0) {
-                                console.log(`[${this.platform}-Scraper] Found ${userMedia.length} user uploaded image(s)`);
                                 // Mark as user-uploaded rather than generated
                                 userMedia.forEach(m => m.source = 'uploaded');
                             }
@@ -221,7 +218,6 @@ export class ClaudeScraper extends BaseScraper {
 
     async extractUserPastedText(element) {
         if (!element) return '';
-        console.log(`[${this.platform}-Scraper] Found user pasted query`);
 
         // Get fallback text from the thumbnail
         let fallbackText = '';
@@ -233,14 +229,12 @@ export class ClaudeScraper extends BaseScraper {
         // First, check if a preview panel is already open (for static HTML files)
         const existingPreview = document.querySelector('[data-testid="close-file-preview"]');
         if (existingPreview) {
-            console.log(`[${this.platform}-Scraper] Found existing open preview panel`);
             const previewContainer = existingPreview.closest('.flex-col');
             if (previewContainer) {
                 const codeDiv = previewContainer.querySelector('.font-mono');
                 if (codeDiv) {
                     const extractedText = codeDiv.innerText.trim();
                     if (extractedText) {
-                        console.log(`[${this.platform}-Scraper] Successfully extracted from existing preview`);
                         return extractedText;
                     }
                 }
@@ -295,7 +289,6 @@ export class ClaudeScraper extends BaseScraper {
                 return fallbackText || '[Pasted content - unable to extract]';
             }
 
-            console.log(`[${this.platform}-Scraper] Successfully extracted ${extractedText.length} chars from preview`);
             return extractedText;
 
         } catch (error) {
@@ -332,8 +325,6 @@ export class ClaudeScraper extends BaseScraper {
         const previewCodesMap = new Map();
 
         if (previewDivs.length > 0) {
-            console.log(`[${this.platform}-Scraper] Found ${previewDivs.length} preview panels`);
-
             // Extract code for each preview panel
             for (let i = 0; i < previewDivs.length; i++) {
                 const div = previewDivs[i];
@@ -395,8 +386,6 @@ export class ClaudeScraper extends BaseScraper {
             const titleEl = previewDiv.querySelector('.line-clamp-1');
             const title = titleEl ? titleEl.textContent.trim() : 'Code';
 
-            console.log(`[${this.platform}-Scraper] Clicking preview: "${title}"`);
-
             // Click to open panel
             previewDiv.click();
 
@@ -418,7 +407,8 @@ export class ClaudeScraper extends BaseScraper {
                 codeblockContainer = document.querySelector("#wiggle-file-content");
             }
 
-            const codeBlock = codeblockContainer?.querySelector(this.selectors.ARTIFACT_CONTENT);
+            let codeBlock = codeblockContainer?.querySelector(this.selectors.ARTIFACT_CONTENT);
+            codeBlock = codeBlock || document.querySelector(this.selectors.ARTIFACT_CONTENT);
 
             if (codeBlock) {
                 const codeEl = codeBlock.querySelector('code');
@@ -442,8 +432,6 @@ export class ClaudeScraper extends BaseScraper {
                     // Format as markdown with title comment, using safe backticks
                     const ticks = this.getBacktickWrapper(codeContent);
                     const markdownBlock = `${ticks}${language}\n# ${title}\n${codeContent}\n${ticks}`;
-
-                    console.log(`[${this.platform}-Scraper] Extracted ${codeContent.length} chars of ${language} code`);
 
                     // Close panel
                     const closeBtn = document.querySelector(this.selectors.ARTIFACT_CLOSE_BUTTON);

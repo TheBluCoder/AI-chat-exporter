@@ -26,8 +26,6 @@ export class ChatGPTScraper extends BaseScraper {
    * @returns {Promise<Array>} Array of messages
    */
   async extractAllMessages(container) {
-    console.log(`[${this.platform}-Scraper] Starting progressive extraction...`);
-
     const scrollContainer = this.findScrollContainer(container);
     const allMessages = new Map(); // Use Map to deduplicate by turn_id
     const scrollIncrement = scrollContainer.clientHeight * (this.scrollConfig.scrollIncrement || DEFAULT_SCROLL_INCREMENT);
@@ -38,7 +36,6 @@ export class ChatGPTScraper extends BaseScraper {
     while (currentScroll < maxScroll) {
       // Extract currently visible messages
       const visibleTurns = Array.from(scrollContainer.querySelectorAll(this.selectors.ARTICLE_TURN));
-      console.log(`[${this.platform}-Scraper] Found ${visibleTurns.length} visible turns at scroll position ${currentScroll}`);
 
       for (const turn of visibleTurns) {
         const turnId = turn.getAttribute('data-turn-id');
@@ -49,7 +46,6 @@ export class ChatGPTScraper extends BaseScraper {
 
         try {
           if (role === 'user') {
-            console.log(`[${this.platform}-Scraper] >> Encountered user turn ${turnIndex} (ID: ${turnId})`);
             const userText = this.extractUserText(turn);
             const userMedia = this.extractUserMedia(turn);
 
@@ -61,10 +57,8 @@ export class ChatGPTScraper extends BaseScraper {
                 turn_index: turnIndex,
                 turn_id: turnId,
               }));
-              console.log(`[${this.platform}-Scraper] ✓ Extracted user turn ${turnIndex} (text: ${!!userText}, media: ${userMedia?.length || 0})`);
             }
           } else if (role === 'assistant') {
-            console.log(`[${this.platform}-Scraper] >> Encountered assistant turn ${turnIndex} (ID: ${turnId})`);
             const modelText = this.extractModelText(turn);
             const modelMedia = this.extractModelMedia(turn);
 
@@ -76,7 +70,6 @@ export class ChatGPTScraper extends BaseScraper {
                 turn_index: turnIndex,
                 turn_id: turnId,
               }));
-              console.log(`[${this.platform}-Scraper] ✓ Extracted model turn ${turnIndex} (text: ${!!modelText}, media: ${modelMedia?.length || 0})`);
             }
           }
         } catch (err) {
@@ -93,14 +86,12 @@ export class ChatGPTScraper extends BaseScraper {
 
       // Check if we've actually scrolled (might be at bottom)
       if (scrollContainer.scrollTop < currentScroll - SCROLL_POSITION_TOLERANCE) {
-        console.log(`[${this.platform}-Scraper] Reached bottom of conversation`);
         break;
       }
     }
 
     // Convert to array and sort by turn_index
     const messages = Array.from(allMessages.values()).sort((a, b) => a.turn_index - b.turn_index);
-    console.log(`[${this.platform}-Scraper] Progressive extraction complete: ${messages.length} total messages`);
 
     return messages;
   }
@@ -153,7 +144,6 @@ export class ChatGPTScraper extends BaseScraper {
     // Get the final text
     const text = clone.innerText.trim();
 
-    console.log(`[${this.platform}-Scraper] Model text extracted (${text.length} chars): ${text.substring(0, LOG_TEXT_PREVIEW_LENGTH)}...`);
     return text;
   }
 
@@ -171,13 +161,8 @@ export class ChatGPTScraper extends BaseScraper {
 
     // Fallback: If no MODEL_CONTENT (happens with image-only responses), use the article itself
     if (!contentContainer) {
-      console.log(`[${this.platform}-Scraper] ℹ️ MODEL_CONTENT not found, searching entire article for images`);
       contentContainer = modelTurnElement;
-    } else {
-      console.log(`[${this.platform}-Scraper] MODEL_CONTENT found, searching for images...`);
     }
-
-    console.log(`[${this.platform}-Scraper] Content container has ${contentContainer.querySelectorAll('img').length} total img elements`);
 
     // Use base class extraction with the adjusted container
     const media = this.extractImagesFromElement(contentContainer, {
@@ -186,14 +171,6 @@ export class ChatGPTScraper extends BaseScraper {
       contentSelector: null, // Don't search for content selector, we already have the container
     });
 
-    // Debug: show all img alts if no images found
-    if (!media || media.length === 0) {
-      const allImgs = contentContainer.querySelectorAll('img');
-      const alts = Array.from(allImgs).map(img => img.alt || '(no alt)').join(', ');
-      console.log(`[${this.platform}-Scraper] Available img alt attributes: [${alts}]`);
-    }
-
-    console.log(`[${this.platform}-Scraper] Total generated images extracted: ${media?.length || 0}`);
     return media;
   }
 }

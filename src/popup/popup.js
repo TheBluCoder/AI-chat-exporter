@@ -81,7 +81,6 @@ async function loadCachedResult() {
 
     const currentChatId = extractChatId(tab.url);
     if (!currentChatId) {
-      console.log('[AI-Exporter] No chat ID found in URL, skipping cache check');
       return;
     }
 
@@ -89,13 +88,11 @@ async function loadCachedResult() {
     const data = await browserAPI.storage.local.get(['chatId', 'lastResult', 'timestamp']);
 
     if (!data.chatId || !data.lastResult || !data.timestamp) {
-      console.log('[AI-Exporter] No cached data found');
       return;
     }
 
     // Check if chat ID matches and cache is still valid
     if (data.chatId === currentChatId && isCacheValid(data.timestamp)) {
-      console.log('[AI-Exporter] Loading cached result for chat:', currentChatId);
       lastResult = data.lastResult;
 
       // Calculate duration from cached timestamp
@@ -104,11 +101,6 @@ async function loadCachedResult() {
       // Show the cached result in UI
       showSuccess(lastResult, cachedDuration);
     } else {
-      if (data.chatId !== currentChatId) {
-        console.log('[AI-Exporter] Chat ID mismatch, invalidating cache');
-      } else {
-        console.log('[AI-Exporter] Cache expired, invalidating');
-      }
       // Clear invalid cache
       await browserAPI.storage.local.clear();
     }
@@ -131,8 +123,6 @@ async function saveCachedResult(result, chatId) {
       lastResult: result,
       timestamp: Date.now()
     });
-
-    console.log('[AI-Exporter] Saved result to cache for chat:', chatId);
   } catch (err) {
     console.error('[AI-Exporter] Error saving to cache:', err);
   }
@@ -214,8 +204,6 @@ function showSuccess(result, durationMs) {
   // Show Grids
   statsGrid.classList.add("show");
   actionsGrid.classList.add("show");
-
-  console.log("Export successful:", result);
 }
 
 /**
@@ -370,9 +358,6 @@ if (btnCopyJson) btnCopyJson.addEventListener("click", handleCopyJson);
 if (btnDownloadJson) btnDownloadJson.addEventListener("click", handleDownloadJson);
 if (btnDownloadMd) btnDownloadMd.addEventListener("click", handleDownloadMd);
 if (btnExportPdf) btnExportPdf.addEventListener("click", handleExportPdf);
-
-// Initialize popup
-console.log("[AI-Exporter] Popup loaded");
 
 // Load cached result if available
 loadCachedResult();

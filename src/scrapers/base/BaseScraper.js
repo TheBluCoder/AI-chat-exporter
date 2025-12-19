@@ -14,6 +14,16 @@
  * }
  */
 
+import {
+  MAX_SCROLL_ATTEMPTS,
+  SCROLL_DELAY_MS,
+  STABILITY_DELAY_MS,
+  STABILITY_TIMEOUT_MS,
+  DEFAULT_ELEMENT_WAIT_TIMEOUT_MS,
+  ELEMENT_POLL_INTERVAL_MS,
+  SCROLL_WIGGLE_DELAY_MS
+} from './constants.js';
+
 export class BaseScraper {
   /**
    * @param {Object} config - Platform-specific configuration
@@ -30,10 +40,10 @@ export class BaseScraper {
     this.platform = config.platform;
     this.selectors = config.selectors;
     this.scrollConfig = config.scrollConfig || {
-      maxAttempts: 50,
-      delay: 800,              // Reduced from 1500ms
-      stabilityDelay: 300,     // Reduced from 500ms
-      stabilityTimeout: 5000,  // Reduced from 8000ms
+      maxAttempts: MAX_SCROLL_ATTEMPTS,
+      delay: SCROLL_DELAY_MS,
+      stabilityDelay: STABILITY_DELAY_MS,
+      stabilityTimeout: STABILITY_TIMEOUT_MS,
     };
   }
 
@@ -44,8 +54,6 @@ export class BaseScraper {
    */
   async scrape() {
     try {
-      console.log(`[${this.platform}-Scraper] Starting scrape for:`, location.href);
-
       // Wait for container
       const container = await this.waitForContainer();
       if (!container) {
@@ -64,8 +72,6 @@ export class BaseScraper {
       // Calculate statistics
       const statistics = this.calculateStatistics(messages);
 
-      console.log(`[${this.platform}-Scraper] Successfully extracted ${messages.length} messages`);
-
       return this.formatResult(messages, statistics);
     } catch (error) {
       console.error(`[${this.platform}-Scraper] Scrape error:`, error);
@@ -80,7 +86,7 @@ export class BaseScraper {
    */
   async waitForContainer() {
     const selector = this.selectors.CONTAINER || this.selectors.CHAT_CONTAINER;
-    return await this.waitForElement(selector, 10000);
+    return await this.waitForElement(selector, DEFAULT_ELEMENT_WAIT_TIMEOUT_MS);
   }
 
   /**
@@ -111,12 +117,8 @@ export class BaseScraper {
    * @returns {Promise<void>}
    */
   async autoScrollToTop(startElement) {
-    console.log(`[${this.platform}-Scraper] Starting auto-scroll sequence...`);
-
     // Find scrollable container
     let scrollContainer = this.findScrollContainer(startElement);
-
-    console.log(`[${this.platform}-Scraper] Identified scroll container:`, scrollContainer.tagName);
 
     let previousHeight = scrollContainer.scrollHeight;
     let noChangeCount = 0;
@@ -128,19 +130,17 @@ export class BaseScraper {
       const currentHeight = scrollContainer.scrollHeight;
 
       if (currentHeight > previousHeight) {
-        console.log(`[${this.platform}-Scraper] Loaded older messages (${currentHeight}px vs ${previousHeight}px)`);
         previousHeight = currentHeight;
         noChangeCount = 0;
       } else {
         // Double-check with wiggle
         scrollContainer.scrollTop = 10;
-        await this.sleep(150);  // Reduced from 300ms
+        await this.sleep(SCROLL_WIGGLE_DELAY_MS);
         scrollContainer.scrollTop = 0;
 
         if (scrollContainer.scrollHeight <= previousHeight) {
           noChangeCount++;
           if (noChangeCount >= 2) {
-            console.log(`[${this.platform}-Scraper] Reached top of history`);
             break;
           }
         }
@@ -201,7 +201,6 @@ export class BaseScraper {
       if (currentContent === previousContent) {
         stableCount++;
         if (stableCount >= 3) {
-          console.log(`[${this.platform}-Scraper] Content stabilized`);
           return;
         }
       } else {
@@ -287,7 +286,7 @@ export class BaseScraper {
    * @param {number} timeout - Timeout in milliseconds
    * @returns {Promise<Element|null>}
    */
-  async waitForElement(selector, timeout = 10000) {
+  async waitForElement(selector, timeout = DEFAULT_ELEMENT_WAIT_TIMEOUT_MS) {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
@@ -295,7 +294,7 @@ export class BaseScraper {
       if (element) {
         return element;
       }
-      await this.sleep(100);
+      await this.sleep(ELEMENT_POLL_INTERVAL_MS);
     }
 
     console.warn(`[${this.platform}-Scraper] Element not found: ${selector}`);

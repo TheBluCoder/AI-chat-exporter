@@ -1,17 +1,17 @@
 {
   "manifest_version": 3,
   "name": "AI Chat Exporter",
-  "description": "Export conversations from AI platforms (Gemini, Claude, ChatGPT, Meta AI)",
+  "description": "Export conversations from AI platforms (Gemini, Claude, ChatGPT). Download chats as JSON, Markdown, or PDF with full media preservation.",
   "version": "3.0.0",
+  "author": "YOUR_NAME",
+  "homepage_url": "https://github.com/YOUR_USERNAME/YOUR_REPO",
   "permissions": [
     "activeTab",
     "scripting",
     "storage"
   ],
   "host_permissions": [
-    "https://chatgpt.com/*",
-    "https://gemini.google.com/*",
-    "https://claude.ai/*"
+    "<all_urls>"
   ],
   "action": {
     "default_popup": "src/popup/popup.html",

@@ -409,6 +409,50 @@
             opacity: 1;
             transition: opacity 0.2s ease-in;
         }
+
+        /* Icon size utilities */
+        .icon-sm {
+            font-size: 18px;
+        }
+
+        .icon-md {
+            font-size: 20px;
+        }
+
+        .icon-lg {
+            font-size: 32px;
+        }
+
+        /* GitHub CTA card */
+        .github-cta {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: rgba(0, 128, 255, 0.1);
+            border: 1px solid rgba(0, 128, 255, 0.3);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .github-cta p {
+            margin: 0 0 8px 0;
+            font-size: 0.875rem;
+            color: var(--foreground);
+        }
+
+        .github-cta a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Footer link override */
+        .footer-icon-link {
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -423,7 +467,7 @@
         <!-- Header -->
         <div class="header flex flex-col gap-1">
             <div class="flex items-center gap-3">
-                <span class="material-symbols-outlined text-primary" style="font-size: 32px;">data_object</span>
+                <span class="material-symbols-outlined text-primary icon-lg">data_object</span>
                 <h1 class="text-xl font-bold">AI Chat Exporter</h1>
             </div>
             <p class="text-sm text-muted">Click the button below to process and export the active conversation.</p>
@@ -494,13 +538,24 @@
 
         <!-- Footer -->
         <div class="footer">
-            <a href="#" class="footer-link">
-                <span class="material-symbols-outlined" style="font-size: 18px;">help_outline</span>
+            <a href="https://youtu.be/YOUR_VIDEO_ID" rel="noopener noreferrer" target="_blank" class="footer-link" title="Watch tutorial video">
+                <span class="material-symbols-outlined icon-sm">help_outline</span>
                 How to use
             </a>
-            <button class="footer-icon-btn">
-                <span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
-            </button>
+            <a href="https://github.com/YOUR_USERNAME/YOUR_REPO" rel="noopener noreferrer" target="_blank" class="footer-icon-btn footer-icon-link" title="View on GitHub">
+                <span class="material-symbols-outlined icon-md">code</span>
+            </a>
+        </div>
+
+        <!-- GitHub Call-to-Action -->
+        <div class="github-cta">
+            <p>
+                Found this helpful?
+            </p>
+            <a href="https://github.com/YOUR_USERNAME/YOUR_REPO" target="_blank">
+                <span class="material-symbols-outlined icon-sm">star</span>
+                Star us on GitHub
+            </a>
         </div>
     </div>
 

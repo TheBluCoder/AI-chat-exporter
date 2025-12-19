@@ -47,12 +47,10 @@ export function detectPlatform() {
 
   for (const [key, config] of Object.entries(PLATFORM_PATTERNS)) {
     if (config.pattern.test(currentUrl)) {
-      console.log(`[Scraper-Init] Detected platform: ${config.name}`);
       return config;
     }
   }
 
-  console.log('[Scraper-Init] No specific platform detected');
   return null;
 }
 
@@ -119,9 +117,6 @@ export function initializeScrapers() {
       scraper_available: true,
     };
   };
-
-  console.log(`[Scraper-Init] Initialized ${platform.name} scraper`);
-  console.log(`[Scraper-Init] Global function available: window.${platform.globalFunction}()`);
 }
 
 export default {

@@ -34,8 +34,6 @@ export class GeminiScraper extends BaseScraper {
       throw new Error('Could not find chat app container');
     }
 
-    console.log(`[${this.platform}-Scraper] Chat app found`);
-
     // Additional wait for rendering
     await this.sleep(this.scrollConfig.stabilityDelay || DEFAULT_STABILITY_DELAY_MS);
 
@@ -60,8 +58,6 @@ export class GeminiScraper extends BaseScraper {
     const messageSets = container.querySelectorAll(this.selectors.MESSAGE_TURN);
 
     if (messageSets.length > 0) {
-      console.log(`[${this.platform}-Scraper] Found ${messageSets.length} message sets`);
-
       for (const messageSet of messageSets) {
         try {
           // Extract user query
@@ -107,8 +103,6 @@ export class GeminiScraper extends BaseScraper {
       }
     } else {
       // Fallback extraction method
-      console.log(`[${this.platform}-Scraper] Using fallback extraction method`);
-
       const userQueries = Array.from(container.querySelectorAll(this.selectors.USER_QUERY));
       const modelResponses = Array.from(container.querySelectorAll(this.selectors.MODEL_RESPONSE));
 
@@ -239,13 +233,11 @@ export class GeminiScraper extends BaseScraper {
     const chips = modelResponseElement.querySelectorAll(this.selectors.IMMERSIVE_CHIP);
     if (chips.length === 0) return null;
 
-    console.log(`[${this.platform}-Scraper] Found ${chips.length} immersive chips`);
     const documents = [];
 
     for (const chip of chips) {
       try {
         const title = chip.innerText.trim() || "Embedded Document";
-        console.log(`[${this.platform}-Scraper] Processing chip: "${title}"`);
 
         // Click the chip to open the panel
         const lightButton = chip.querySelector('button, [role="button"], .button');
@@ -273,7 +265,6 @@ export class GeminiScraper extends BaseScraper {
           if (editor) {
             const content = editor.innerText || editor.textContent;
             if (content) {
-              console.log(`[${this.platform}-Scraper] Extracted ${content.length} chars from document`);
               documents.push({
                 title: title,
                 content: content.trim(),
@@ -332,12 +323,9 @@ export class GeminiScraper extends BaseScraper {
     const fileButtons = carousel.querySelectorAll(this.selectors.USER_FILE_BUTTON);
     if (fileButtons.length === 0) return null;
 
-    console.log(`[${this.platform}-Scraper] Found ${fileButtons.length} user uploaded files`);
-
     for (const button of fileButtons) {
       try {
         const fileName = button.getAttribute('aria-label') || 'Uploaded Document';
-        console.log(`[${this.platform}-Scraper] Processing user file: "${fileName}"`);
 
         button.click();
 
@@ -360,7 +348,6 @@ export class GeminiScraper extends BaseScraper {
           }
 
           if (content) {
-            console.log(`[${this.platform}-Scraper] Extracted ${content.length} chars from user file`);
             documents.push({
               title: fileName,
               content: content,
