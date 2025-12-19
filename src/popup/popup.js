@@ -29,6 +29,110 @@ let lastResult = null;
 let scrapeStartTime = 0;
 
 /**
+ * Extract chat ID from URL
+ * @param {string} url - The current tab URL
+ * @returns {string|null} - Chat ID or null if not found
+ */
+function extractChatId(url) {
+  if (!url) return null;
+
+  try {
+    // Parse URL and get pathname
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+
+    // Split by '/' and get the last non-empty segment
+    const segments = pathname.split('/').filter(s => s.length > 0);
+    const chatId = segments[segments.length - 1];
+
+    return chatId || null;
+  } catch (err) {
+    console.error('[AI-Exporter] Error extracting chat ID:', err);
+    return null;
+  }
+}
+
+/**
+ * Check if cached data is still valid (within 12 hours)
+ * @param {number} timestamp - Cached timestamp in milliseconds
+ * @returns {boolean} - True if still valid, false if expired
+ */
+function isCacheValid(timestamp) {
+  if (!timestamp) return false;
+  const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+  const now = Date.now();
+  return (now - timestamp) < TWELVE_HOURS_MS;
+}
+
+/**
+ * Load cached result from storage if valid
+ */
+async function loadCachedResult() {
+  try {
+    // Get current tab URL
+    const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url) return;
+
+    const currentChatId = extractChatId(tab.url);
+    if (!currentChatId) {
+      console.log('[AI-Exporter] No chat ID found in URL, skipping cache check');
+      return;
+    }
+
+    // Get cached data from storage
+    const data = await browserAPI.storage.local.get(['chatId', 'lastResult', 'timestamp']);
+
+    if (!data.chatId || !data.lastResult || !data.timestamp) {
+      console.log('[AI-Exporter] No cached data found');
+      return;
+    }
+
+    // Check if chat ID matches and cache is still valid
+    if (data.chatId === currentChatId && isCacheValid(data.timestamp)) {
+      console.log('[AI-Exporter] Loading cached result for chat:', currentChatId);
+      lastResult = data.lastResult;
+
+      // Calculate duration from cached timestamp
+      const cachedDuration = data.lastResult.statistics?.duration || 0;
+
+      // Show the cached result in UI
+      showSuccess(lastResult, cachedDuration);
+    } else {
+      if (data.chatId !== currentChatId) {
+        console.log('[AI-Exporter] Chat ID mismatch, invalidating cache');
+      } else {
+        console.log('[AI-Exporter] Cache expired, invalidating');
+      }
+      // Clear invalid cache
+      await browserAPI.storage.local.clear();
+    }
+  } catch (err) {
+    console.error('[AI-Exporter] Error loading cached result:', err);
+  }
+}
+
+/**
+ * Save result to storage
+ * @param {object} result - The scraping result to cache
+ * @param {string} chatId - The chat ID to use as key
+ */
+async function saveCachedResult(result, chatId) {
+  try {
+    if (!chatId || !result) return;
+
+    await browserAPI.storage.local.set({
+      chatId: chatId,
+      lastResult: result,
+      timestamp: Date.now()
+    });
+
+    console.log('[AI-Exporter] Saved result to cache for chat:', chatId);
+  } catch (err) {
+    console.error('[AI-Exporter] Error saving to cache:', err);
+  }
+}
+
+/**
  * Reset UI state
  */
 function resetUI() {
@@ -157,6 +261,12 @@ async function handleExport() {
         // Display result
         if (response.success) {
           showSuccess(response, duration);
+
+          // Save to storage cache
+          const chatId = extractChatId(tab.url);
+          if (chatId) {
+            saveCachedResult(response, chatId);
+          }
         } else {
           showError(response.error || "Scraping failed");
           console.error("Export failed:", response);
@@ -257,3 +367,6 @@ if (btnExportPdf) btnExportPdf.addEventListener("click", handleExportPdf);
 
 // Initialize popup
 console.log("[AI-Exporter] Popup loaded");
+
+// Load cached result if available
+loadCachedResult();
