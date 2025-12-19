@@ -14,14 +14,12 @@
   // If browser API already exists (Firefox, Safari), use it
   if (typeof browser !== 'undefined') {
     window.browserAPI = browser;
-    console.log('[Browser-Polyfill] Using native browser API (Firefox/Safari)');
     return;
   }
 
   // If chrome API exists (Chrome, Edge), wrap it to match browser API
   if (typeof chrome !== 'undefined') {
     window.browserAPI = chrome;
-    console.log('[Browser-Polyfill] Using chrome API (Chrome/Edge)');
     return;
   }
 
