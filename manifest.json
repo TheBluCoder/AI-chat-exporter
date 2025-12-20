@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AI Chat Exporter",
   "description": "Export conversations from AI platforms (Gemini, Claude, ChatGPT). Download chats as JSON, Markdown, or PDF with full media preservation.",
-  "version": "3.0.0",
+  "version": "1.0.0",
   "author": "bluCoder",
   "homepage_url": "https://github.com/TheBluCoder/AI-chat-exporter",
   "icons": {

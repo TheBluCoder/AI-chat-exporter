@@ -1,6 +1,6 @@
 # AI Chat Exporter
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
 [![Architecture](https://img.shields.io/badge/architecture-ES6%20Modules-brightgreen.svg)](docs/ES6_MIGRATION.md)
@@ -64,9 +64,9 @@ A powerful, browser-agnostic extension to export conversations from popular AI p
 ### Platform-Specific Features
 - **Gemini**: Extracts uploaded documents, immersive editor content, and shared conversation links
 - **ChatGPT**: Progressive scroll extraction for lazy-loaded conversations, code blocks, generated images
-- **Claude**: Preview panel extraction (artifacts), code blocks with syntax highlighting
+- **Claude**: Preview panel extraction (artifacts), code blocks with syntax highlighting (PDF extraction not yet supported)
 
-## Project Structure (v3.0 ES6 Architecture)
+## Project Structure (v1.0 ES6 Architecture)
 
 ```
 ai-chat-exporter/
@@ -189,27 +189,31 @@ Found an issue? The extension includes a built-in "Report Issue" button that aut
 
 ## Roadmap
 
-### v3.0 (Current) ✅
-- [x] ES6 modules architecture migration
-- [x] Template method pattern with BaseScraper
-- [x] Complete ChatGPT scraper implementation
-- [x] Complete Gemini scraper implementation
-- [x] Complete Claude scraper implementation
-- [x] Preview/artifact extraction (Claude, Gemini)
+### v1.0 (Current) ✅
+- [x] ES6 modules architecture with template method pattern
+- [x] Complete ChatGPT scraper (text, code blocks, generated images)
+- [x] Complete Gemini scraper (uploaded documents, immersive docs, shared links)
+- [x] Complete Claude scraper (artifacts, code blocks, preview panels)
+- [x] Multiple export formats (JSON, Markdown, PDF)
+- [x] Base64 media embedding
 - [x] 70% code reduction through shared utilities
+- [x] Cross-browser compatibility (Chrome, Edge, Firefox, Safari)
+- [x] GitHub issue reporting integration
 
-### v3.1 (Planned)
-- [ ] Enhance ChatGPT scraper for PDF file extraction
-- [ ] Add Gemini shared links enhancement
-- [ ] Add export templates customization
-- [ ] Tutorial video and documentation
+### v2.0 (Planned)
+- [ ] Complete migration to TypeScript
+- [ ] Type-safe scraper implementations
+- [ ] Enhanced IDE support with full type inference
+- [ ] Improved error handling with typed exceptions
+- [ ] Build process optimization
 
-### v4.0 (Future)
-- [ ] Conversation search/filter within extension
+### v3.0 (Future)
+- [ ] PDF content extraction from ChatGPT (user-uploaded and AI-generated)
+- [ ] PDF content extraction from Claude (user-uploaded)
+- [ ] Extract other file formats uploaded by users (Word, Excel, TXT, etc.)
+- [ ] Enhanced file metadata preservation
 - [ ] Batch export functionality
-- [ ] Cloud storage integration (optional)
-- [ ] Conversation statistics dashboard
-- [ ] Export scheduling/automation
+- [ ] Conversation search/filter within extension
 
 ---
 
