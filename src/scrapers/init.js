@@ -89,22 +89,6 @@ export function initializeScrapers() {
       result.scraper_type = platform.ScraperClass.name;
     }
 
-    // Send message to extension runtime (if available)
-    try {
-      if (typeof browserAPI !== "undefined" && browserAPI.runtime?.sendMessage) {
-        browserAPI.runtime.sendMessage(
-          { type: "SCRAPE_RESULT", payload: result, platform: platform.name },
-          (response) => {
-            if (browserAPI.runtime.lastError) {
-              console.warn("[Scraper-Init] Runtime message error:", browserAPI.runtime.lastError);
-            }
-          }
-        );
-      }
-    } catch (error) {
-      console.warn("[Scraper-Init] Failed to send runtime message:", error);
-    }
-
     return result;
   };
 
