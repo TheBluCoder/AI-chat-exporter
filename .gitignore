@@ -50,3 +50,5 @@ backup/
 
 # Test files (not for distribution)
 test-files/
+BEFORE_SUBMISSION.md
+CLAUDE.md
