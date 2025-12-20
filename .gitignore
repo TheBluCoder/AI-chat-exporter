@@ -11,6 +11,7 @@ build/
 # IDE and Editor
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~
@@ -40,8 +41,12 @@ yarn-error.log*
 web-ext-artifacts/
 *.crx
 *.xpi
+*.ico
 
 # Old/backup files
 *.old
 *.bak
 backup/
+
+# Test files (not for distribution)
+test-files/

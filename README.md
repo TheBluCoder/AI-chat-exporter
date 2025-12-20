@@ -1,15 +1,17 @@
 # AI Chat Exporter
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/yourusername/ai-chat-exporter)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
 [![Architecture](https://img.shields.io/badge/architecture-ES6%20Modules-brightgreen.svg)](docs/ES6_MIGRATION.md)
 
-A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, ChatGPT, and Meta AI. Built with modern ES6 architecture for maximum extensibility and maintainability.
+A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, and ChatGPT. Built with modern ES6 architecture for maximum extensibility and maintainability.
+
+> **Production Ready**: All code cleaned, optimized, and ready for Chrome Web Store submission.
 
 ## Features
 
-- **Multi-Platform Support**: Export from Gemini, Claude, ChatGPT, and Meta AI
+- **Multi-Platform Support**: Export from Gemini, Claude, and ChatGPT
 - **Multiple Export Formats**: JSON, Markdown, and PDF
 - **Media Embedding**: Automatically embeds images as base64 in exports
 - **Document Extraction**: Captures uploaded files, embedded documents, and preview panels
@@ -58,7 +60,6 @@ A powerful, browser-agnostic extension to export conversations from popular AI p
 | **Google Gemini** | ✅ Full Support | ✅ Full Support | ✅ Immersive Docs | Stable |
 | **ChatGPT** | ✅ Full Support | ❌ Not Yet | ✅ Image Generation | Stable |
 | **Claude** | ✅ Full Support | ❌ Not Yet | ✅ Code Previews | Stable |
-| **Meta AI** | 🔄 Planned | 🔄 Planned | 🔄 Planned | Planned |
 
 ### Platform-Specific Features
 - **Gemini**: Extracts uploaded documents, immersive editor content, and shared conversation links
@@ -105,36 +106,20 @@ ai-chat-exporter/
 
 ## Development
 
-### Prerequisites
+### No Build Required
 
-- Node.js >= 16.0.0
-- npm >= 8.0.0
-
-### Setup
+This extension uses pure ES6 modules - **no build process required!**
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ai-chat-exporter.git
-cd ai-chat-exporter
+git clone https://github.com/TheBluCoder/AI-chat-exporter.git
+cd AI-chat-exporter
 
-# Install dependencies
-npm install
+# Load in browser
+# Chrome: chrome://extensions → "Load unpacked"
+# Firefox: about:debugging → "Load Temporary Add-on"
 
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-```
-
-### Building
-
-```bash
-# Create production build
-npm run build
-
-# Package for distribution
-npm run package
+# Make changes and reload - that's it!
 ```
 
 ## Documentation
@@ -195,9 +180,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- [Report a Bug](https://github.com/yourusername/ai-chat-exporter/issues)
-- [Request a Feature](https://github.com/yourusername/ai-chat-exporter/issues)
-- [Contact](mailto:your.email@example.com)
+Found an issue? The extension includes a built-in "Report Issue" button that automatically collects diagnostic information.
+
+- [Report a Bug](https://github.com/TheBluCoder/AI-chat-exporter/issues)
+- [Request a Feature](https://github.com/TheBluCoder/AI-chat-exporter/issues)
+
+**Like this extension?** ⭐ Star us on GitHub!
 
 ## Roadmap
 
@@ -211,10 +199,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] 70% code reduction through shared utilities
 
 ### v3.1 (Planned)
-- [ ] Complete Meta AI scraper implementation
 - [ ] Enhance ChatGPT scraper for PDF file extraction
 - [ ] Add Gemini shared links enhancement
 - [ ] Add export templates customization
+- [ ] Tutorial video and documentation
 
 ### v4.0 (Future)
 - [ ] Conversation search/filter within extension
@@ -225,4 +213,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with care by the community
+**Made with ❤️ by [bluCoder](https://github.com/TheBluCoder)**
+
+[⭐ Star this repo](https://github.com/TheBluCoder/AI-chat-exporter) if you find it helpful!

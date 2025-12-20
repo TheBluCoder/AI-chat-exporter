@@ -352,12 +352,44 @@ async function handleExportPdf() {
 // - convertToMarkdown()
 // - exportToPDF()
 
+/**
+ * Handle report issue click
+ */
+function handleReportIssue(e) {
+  e.preventDefault();
+
+  const version = browserAPI.runtime.getManifest().version;
+  const diagnostics = `**Extension Version:** ${version}
+**Browser:** ${navigator.userAgent}
+**Platform:** ${navigator.platform}
+
+**Issue Description:**
+[Describe what happened]
+
+**Steps to Reproduce:**
+1.
+2.
+3.
+
+**Expected Behavior:**
+[What you expected to happen]
+
+**Screenshots:**
+[If applicable]`;
+
+  const issueUrl = `https://github.com/TheBluCoder/AI-chat-exporter/issues/new?body=${encodeURIComponent(diagnostics)}`;
+  window.open(issueUrl, '_blank');
+}
+
 // Event listeners
 exportBtn.addEventListener("click", handleExport);
 if (btnCopyJson) btnCopyJson.addEventListener("click", handleCopyJson);
 if (btnDownloadJson) btnDownloadJson.addEventListener("click", handleDownloadJson);
 if (btnDownloadMd) btnDownloadMd.addEventListener("click", handleDownloadMd);
 if (btnExportPdf) btnExportPdf.addEventListener("click", handleExportPdf);
+
+const reportIssueBtn = document.getElementById("reportIssue");
+if (reportIssueBtn) reportIssueBtn.addEventListener("click", handleReportIssue);
 
 // Load cached result if available
 loadCachedResult();
