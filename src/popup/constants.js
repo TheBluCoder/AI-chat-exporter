@@ -14,3 +14,11 @@ export const MS_TO_SECONDS = 1000;
 
 // UI Feedback
 export const UI_FEEDBACK_TIMEOUT_MS = 2000;
+
+// Platform URL Patterns (duplicated from scrapers/base/constants.js for popup context)
+export const PLATFORM_URL_PATTERNS = {
+  CHATGPT: /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//,
+  GEMINI_CHAT: /^https:\/\/gemini\.google\.com\/app\//,
+  CLAUDE: /^https:\/\/claude\.ai\/chat\//,
+  GEMINI_SHARED: /^https:\/\/gemini\.google\.com\/share\//,
+};

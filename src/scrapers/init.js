@@ -7,31 +7,32 @@
 import { ChatGPTScraper } from './platforms/ChatGPTScraper.js';
 import { GeminiScraper } from './platforms/GeminiScraper.js';
 import { ClaudeScraper } from './platforms/ClaudeScraper.js';
+import { PLATFORM_URL_PATTERNS } from './base/constants.js';
 
 /**
  * Platform detection configuration
  */
 const PLATFORM_PATTERNS = {
   CHATGPT: {
-    pattern: /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//,
+    pattern: PLATFORM_URL_PATTERNS.CHATGPT,
     name: 'ChatGPT',
     ScraperClass: ChatGPTScraper,
     globalFunction: 'scrapeChatGPT',
   },
   GEMINI_CHAT: {
-    pattern: /^https:\/\/gemini\.google\.com\/app\//,
+    pattern: PLATFORM_URL_PATTERNS.GEMINI_CHAT,
     name: 'Google Gemini (Active Chat)',
     ScraperClass: GeminiScraper,
     globalFunction: 'scrapeGeminiChat',
   },
   CLAUDE: {
-    pattern: /^https:\/\/claude\.ai\/chat\//,
+    pattern: PLATFORM_URL_PATTERNS.CLAUDE,
     name: 'Claude (Active Chat)',
     ScraperClass: ClaudeScraper,
     globalFunction: 'scrapeClaude',
   },
   GEMINI_SHARED: {
-    pattern: /^https:\/\/gemini\.google\.com\/share\//,
+    pattern: PLATFORM_URL_PATTERNS.GEMINI_SHARED,
     name: 'Google Gemini (Shared)',
     ScraperClass: null, // TODO: Implement GeminiSharedScraper
     globalFunction: 'scrapeGeminiSharedChat',

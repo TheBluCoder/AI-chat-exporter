@@ -45,7 +45,7 @@ browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error("[AI-Chat-Exporter] runScrape() not available - scraper not initialized for this platform");
       sendResponse({
         success: false,
-        error: "No scraper available for this platform",
+        error: "This page is not supported. Please navigate to ChatGPT, Claude, or Google Gemini to export conversations.",
         timestamp: new Date().toISOString(),
       });
     }

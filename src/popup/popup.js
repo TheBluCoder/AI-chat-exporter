@@ -7,7 +7,8 @@ import {
   CACHE_VALIDITY_MS,
   JSON_INDENT_SPACES,
   MS_TO_SECONDS,
-  UI_FEEDBACK_TIMEOUT_MS
+  UI_FEEDBACK_TIMEOUT_MS,
+  PLATFORM_URL_PATTERNS
 } from './constants.js';
 
 // DOM elements
@@ -391,5 +392,27 @@ if (btnExportPdf) btnExportPdf.addEventListener("click", handleExportPdf);
 const reportIssueBtn = document.getElementById("reportIssue");
 if (reportIssueBtn) reportIssueBtn.addEventListener("click", handleReportIssue);
 
-// Load cached result if available
+/**
+ * Check if current page is a supported platform
+ */
+async function checkSupportedPlatform() {
+  try {
+    const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url) return;
+
+    const url = tab.url;
+    const supportedPatterns = Object.values(PLATFORM_URL_PATTERNS);
+    const isSupported = supportedPatterns.some(pattern => pattern.test(url));
+
+    if (!isSupported) {
+      showError("This extension only works on ChatGPT, Claude, or Google Gemini conversation pages.");
+      exportBtn.disabled = true;
+    }
+  } catch (err) {
+    console.error('[AI-Exporter] Error checking platform:', err);
+  }
+}
+
+// Check platform and load cached result
+checkSupportedPlatform();
 loadCachedResult();

@@ -22,3 +22,11 @@ export const PREVIEW_CLOSE_DELAY_MS = 200;
 
 // Logging Configuration
 export const LOG_TEXT_PREVIEW_LENGTH = 50;
+
+// Platform URL Patterns
+export const PLATFORM_URL_PATTERNS = {
+  CHATGPT: /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//,
+  GEMINI_CHAT: /^https:\/\/gemini\.google\.com\/app\//,
+  CLAUDE: /^https:\/\/claude\.ai\/chat\//,
+  GEMINI_SHARED: /^https:\/\/gemini\.google\.com\/share\//,
+};
