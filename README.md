@@ -60,6 +60,14 @@ Works on Chrome, Edge, Brave, and other Chromium-based browsers.
    - **Download MD**: Save as Markdown with embedded images
    - **Export PDF**: Print to PDF
 
+### Known Issues
+
+**First-time page load:** When you first navigate to ChatGPT, Claude, or Gemini, you may encounter one of these errors:
+- "Connection failed: Could not establish connection. Receiving end does not exist."
+- "This page is not supported. Please navigate to ChatGPT, Claude, or Google Gemini to export conversations."
+
+**Workaround:** Simply **refresh the page** (F5 or Ctrl+R) and the extension will work normally. This is a timing issue where the extension hasn't fully initialized yet. A fix is in development for v1.1.
+
 ## Supported Platforms
 
 | Platform | Active Chat | Shared Links | Preview/Artifacts | Status |
