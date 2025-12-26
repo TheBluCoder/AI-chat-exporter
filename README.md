@@ -7,7 +7,7 @@
 
 A powerful, browser-agnostic extension to export conversations from popular AI platforms including Google Gemini, Claude, and ChatGPT. Built with modern ES6 architecture for maximum extensibility and maintainability.
 
-> **Production Ready**: All code cleaned, optimized, and ready for Chrome Web Store submission.
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-blue?logo=google-chrome)](https://chromewebstore.google.com/detail/ai-chat-exporter/dfkonbknfdohjkabbajhghecgjpbmphc)
 
 ## Features
 
@@ -25,8 +25,15 @@ A powerful, browser-agnostic extension to export conversations from popular AI p
 
 ### Installation
 
-#### Chrome / Edge
-1. Download the latest release
+#### Chrome Web Store (Recommended)
+Install directly from the Chrome Web Store:
+
+**[Install AI Chat Exporter](https://chromewebstore.google.com/detail/ai-chat-exporter/dfkonbknfdohjkabbajhghecgjpbmphc)**
+
+Works on Chrome, Edge, Brave, and other Chromium-based browsers.
+
+#### Manual Installation (Chrome / Edge)
+1. Download the latest release from [GitHub](https://github.com/TheBluCoder/AI-chat-exporter/releases)
 2. Open `chrome://extensions/` (or `edge://extensions/`)
 3. Enable "Developer mode"
 4. Click "Load unpacked"
