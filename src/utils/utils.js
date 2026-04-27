@@ -241,6 +241,44 @@ function escapeHtml(text) {
  * @returns {Promise<string>} Markdown formatted string
  */
 async function convertToMarkdown(result) {
+  const normalizeInlineMarkdownImages = (text) => {
+    if (!text) return '';
+
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    return text.replace(imageRegex, (_full, altText, url) => `\n\n![${altText || 'Image'}](${url})\n\n`);
+  };
+
+  const escapeForRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  const injectMediaNearMatchingText = (text, mediaList) => {
+    if (!text || !mediaList || mediaList.length === 0) {
+      return { text, remainingMedia: mediaList || [] };
+    }
+
+    let updatedText = text;
+    const remainingMedia = [];
+
+    for (const mediaItem of mediaList) {
+      const mediaUrl = mediaItem.url || mediaItem.src || mediaItem.base64 || '';
+      const mediaName = (mediaItem.name || mediaItem.alt || '').trim();
+
+      if (!mediaUrl || !mediaName) {
+        remainingMedia.push(mediaItem);
+        continue;
+      }
+
+      const nameRegex = new RegExp(escapeForRegex(mediaName));
+      if (!nameRegex.test(updatedText)) {
+        remainingMedia.push(mediaItem);
+        continue;
+      }
+
+      updatedText = updatedText.replace(nameRegex, `${mediaName}\n\n![${mediaName}](${mediaUrl})`);
+    }
+
+    return { text: updatedText, remainingMedia };
+  };
+
   let md = `# Chat Export - ${escapeHtmlForMarkdown(result.platform || 'Unknown Platform')}\n\n`;
   md += `**URL:** ${escapeHtmlForMarkdown(result.url)}\n`;
   md += `**Date:** ${new Date(result.timestamp).toLocaleString()}\n\n`;
@@ -252,9 +290,8 @@ async function convertToMarkdown(result) {
       md += `${role}:\n\n`;
 
       // Handle both field name formats (content vs text)
-      const messageText = msg.content || msg.text || '';
-      // Escape HTML entities to prevent them from being rendered as HTML
-      md += `${escapeHtmlForMarkdown(messageText)}\n\n`;
+      const originalMessageText = msg.content || msg.text || '';
+      let messageText = normalizeInlineMarkdownImages(originalMessageText);
 
       // Handle uploaded files (both formats: uploaded_files vs uploadedFiles)
       const uploadedFiles = msg.uploaded_files || msg.uploadedFiles;
@@ -268,9 +305,28 @@ async function convertToMarkdown(result) {
 
       // Handle generated media with base64 embedding (both formats: media vs images)
       const media = msg.media || msg.images;
+      let remainingMedia = media || [];
       if (media && media.length > 0) {
-        md += `*Media:*\n`;
-        for (const m of media) {
+        const missingMedia = media.filter((m) => {
+          const mediaUrl = m.url || m.src || m.base64 || '';
+          if (!mediaUrl) return false;
+          return !originalMessageText.includes(mediaUrl);
+        });
+
+        const injected = injectMediaNearMatchingText(messageText, missingMedia);
+        messageText = injected.text;
+        remainingMedia = injected.remainingMedia;
+      }
+
+      // Escape HTML entities to prevent them from being rendered as HTML
+      md += `${escapeHtmlForMarkdown(messageText)}\n\n`;
+
+      if (remainingMedia && remainingMedia.length > 0) {
+        if (remainingMedia.length > 0) {
+          md += `*Media:*\n`;
+        }
+
+        for (const m of remainingMedia) {
           // Handle different image object formats
           let mediaUrl = m.url || m.src;
           const base64Data = m.base64;
@@ -285,7 +341,9 @@ async function convertToMarkdown(result) {
 
           md += `![${escapeHtmlForMarkdown(m.name || m.alt || 'Image')}](${mediaUrl})\n`;
         }
-        md += `\n`;
+        if (remainingMedia.length > 0) {
+          md += `\n`;
+        }
       }
 
       // Handle embedded documents

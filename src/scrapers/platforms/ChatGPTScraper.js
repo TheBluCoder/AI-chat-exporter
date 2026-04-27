@@ -131,6 +131,27 @@ export class ChatGPTScraper extends BaseScraper {
   }
 
   /**
+   * Extract text content from user message
+   * Override to preserve inline image position in exported text
+   * @param {Element} userTurnElement - The user turn container
+   * @returns {string} Extracted text content
+   */
+  extractUserText(userTurnElement) {
+    if (!userTurnElement) return '';
+
+    const contentContainer = userTurnElement.querySelector(this.selectors.USER_CONTENT);
+    if (!contentContainer) return '';
+
+    const targetElement = contentContainer.querySelector(this.selectors.USER_TEXT) || contentContainer;
+    const clone = targetElement.cloneNode(true);
+
+    this.replaceInlineImagesWithMarkdown(clone, this.selectors.UPLOADED_IMG);
+    clone.querySelectorAll('button').forEach(el => el.remove());
+
+    return clone.innerText.trim();
+  }
+
+  /**
    * Extract text content from model response
    * Override to handle ChatGPT's code block formatting
    * @param {Element} modelTurnElement - The model turn article
@@ -147,6 +168,9 @@ export class ChatGPTScraper extends BaseScraper {
 
     // Clone to avoid modifying the actual DOM
     const clone = targetElement.cloneNode(true);
+
+    // Preserve image position relative to surrounding text
+    this.replaceInlineImagesWithMarkdown(clone, this.selectors.GENERATED_IMG);
 
     // Process code blocks (pre elements)
     const preElements = clone.querySelectorAll('pre');
@@ -179,6 +203,26 @@ export class ChatGPTScraper extends BaseScraper {
     const text = clone.innerText.trim();
 
     return text;
+  }
+
+  /**
+   * Replace inline images with markdown image syntax so content ordering
+   * stays close to the rendered chat layout.
+   * @param {Element} rootElement - Cloned content root
+   * @param {string} imageSelector - Selector used to find relevant images
+   */
+  replaceInlineImagesWithMarkdown(rootElement, imageSelector) {
+    if (!rootElement || !imageSelector) return;
+
+    const images = rootElement.querySelectorAll(imageSelector);
+    images.forEach((img) => {
+      const src = img.src || img.getAttribute('data-src') || img.dataset.src;
+      if (!src || src.startsWith('data:')) return;
+
+      const alt = (img.alt || 'Image').trim() || 'Image';
+      const markdownImage = `\n![${alt}](${src})\n`;
+      img.replaceWith(document.createTextNode(markdownImage));
+    });
   }
 
   /**
