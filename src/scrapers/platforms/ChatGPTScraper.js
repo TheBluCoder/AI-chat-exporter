@@ -27,7 +27,7 @@ export class ChatGPTScraper extends BaseScraper {
    */
   async extractAllMessages(container) {
     const scrollContainer = this.findScrollContainer(container);
-    const allMessages = new Map(); // Use Map to deduplicate by turn_id
+    const allMessages = new Map(); // Use Map to deduplicate by stable turn key
     const scrollIncrement = scrollContainer.clientHeight * (this.scrollConfig.scrollIncrement || DEFAULT_SCROLL_INCREMENT);
     let currentScroll = 0;
     const maxScroll = scrollContainer.scrollHeight;
@@ -38,11 +38,12 @@ export class ChatGPTScraper extends BaseScraper {
       const visibleTurns = Array.from(scrollContainer.querySelectorAll(this.selectors.ARTICLE_TURN));
 
       for (const turn of visibleTurns) {
-        const turnId = turn.getAttribute('data-turn-id');
-        if (!turnId || allMessages.has(turnId)) continue;
-
         const role = turn.getAttribute('data-turn');
-        const turnIndex = parseInt(turn.getAttribute('data-testid')?.split('-').pop() || DEFAULT_TURN_INDEX);
+        const turnIndex = this.parseTurnIndex(turn);
+        const turnId = turn.getAttribute('data-turn-id');
+        const turnKey = this.createTurnKey(turn, role, turnIndex);
+
+        if (allMessages.has(turnKey)) continue;
 
         try {
           if (role === 'user') {
@@ -50,12 +51,12 @@ export class ChatGPTScraper extends BaseScraper {
             const userMedia = this.extractUserMedia(turn);
 
             if (userText || userMedia) {
-              allMessages.set(turnId, this.createMessage({
+              allMessages.set(turnKey, this.createMessage({
                 role: 'user',
                 content: userText,
                 media: userMedia,
                 turn_index: turnIndex,
-                turn_id: turnId,
+                turn_id: turnId || turnKey,
               }));
             }
           } else if (role === 'assistant') {
@@ -63,17 +64,17 @@ export class ChatGPTScraper extends BaseScraper {
             const modelMedia = this.extractModelMedia(turn);
 
             if (modelText || modelMedia) {
-              allMessages.set(turnId, this.createMessage({
+              allMessages.set(turnKey, this.createMessage({
                 role: 'model',
                 content: modelText,
                 media: modelMedia,
                 turn_index: turnIndex,
-                turn_id: turnId,
+                turn_id: turnId || turnKey,
               }));
             }
           }
         } catch (err) {
-          console.warn(`[${this.platform}-Scraper] Error extracting turn ${turnId}:`, err);
+          console.warn(`[${this.platform}-Scraper] Error extracting turn ${turnKey}:`, err);
         }
       }
 
@@ -94,6 +95,39 @@ export class ChatGPTScraper extends BaseScraper {
     const messages = Array.from(allMessages.values()).sort((a, b) => a.turn_index - b.turn_index);
 
     return messages;
+  }
+
+  /**
+   * Parse numeric turn index from data-testid and fall back safely
+   * @param {Element} turnElement
+   * @returns {number}
+   */
+  parseTurnIndex(turnElement) {
+    const testId = turnElement?.getAttribute('data-testid') || '';
+    const parsed = Number.parseInt(testId.split('-').pop(), 10);
+    return Number.isFinite(parsed) ? parsed : DEFAULT_TURN_INDEX;
+  }
+
+  /**
+   * Build a stable dedupe key even when data-turn-id is unavailable
+   * @param {Element} turnElement
+   * @param {string|null} role
+   * @param {number} turnIndex
+   * @returns {string}
+   */
+  createTurnKey(turnElement, role, turnIndex) {
+    const turnId = turnElement?.getAttribute('data-turn-id');
+    if (turnId) return turnId;
+
+    const testId = turnElement?.getAttribute('data-testid');
+    if (testId) return testId;
+
+    const textPreview = (role === 'assistant'
+      ? this.extractModelText(turnElement)
+      : this.extractUserText(turnElement)
+    ).slice(0, LOG_TEXT_PREVIEW_LENGTH);
+
+    return `${role || 'unknown'}-${turnIndex}-${textPreview}`;
   }
 
   /**

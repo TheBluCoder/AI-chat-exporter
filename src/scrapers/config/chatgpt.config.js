@@ -12,9 +12,9 @@ export const CHATGPT_CONFIG = {
     CHAT_CONTAINER: 'main',
 
     // Turns (The atomic units of conversation)
-    USER_TURN: 'article[data-turn="user"]',
-    MODEL_TURN: 'article[data-turn="assistant"]',
-    ARTICLE_TURN: 'article[data-turn]',
+    USER_TURN: '[data-turn="user"]',
+    MODEL_TURN: '[data-turn="assistant"]',
+    ARTICLE_TURN: '[data-turn]',
 
     // Content Containers (Where the actual stuff is)
     USER_CONTENT: '[data-message-author-role="user"]',
