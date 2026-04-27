@@ -25,8 +25,11 @@ export const CHATGPT_CONFIG = {
     MODEL_TEXT: '.markdown',
 
     // Images
-    UPLOADED_IMG: 'img[alt="Uploaded image"]',
-    GENERATED_IMG: 'img[alt="Generated image"]',
+    // ChatGPT has moved away from stable alt labels in many responses
+    // (e.g., shopping cards), so we use broad image matching and exclude
+    // known UI/metadata icons.
+    UPLOADED_IMG: 'img[src]:not(.icon-sm):not([alt="Profile image"]), img[data-src]:not(.icon-sm):not([alt="Profile image"])',
+    GENERATED_IMG: 'img[src]:not(.icon-sm):not([alt="Profile image"]), img[data-src]:not(.icon-sm):not([alt="Profile image"])',
 
     // Fallbacks
     GENERIC_TEXT: '.text-message',
