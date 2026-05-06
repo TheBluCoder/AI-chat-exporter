@@ -16,7 +16,10 @@
     "storage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://gemini.google.com/*",
+    "https://claude.ai/*"
   ],
   "action": {
     "default_popup": "src/popup/popup.html",
@@ -32,6 +35,7 @@
     {
       "matches": [
         "https://chatgpt.com/c/*",
+        "https://chat.openai.com/c/*",
         "https://gemini.google.com/app/*",
         "https://claude.ai/chat/*"
       ],
@@ -51,9 +55,13 @@
       ],
       "matches": [
         "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
         "https://gemini.google.com/*",
         "https://claude.ai/*"
       ]
     }
+  ],
+  "optional_host_permissions": [
+    "<all_urls>"
   ]
 }
