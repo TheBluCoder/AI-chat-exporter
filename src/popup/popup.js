@@ -20,6 +20,9 @@ const btnDownloadJson = document.getElementById("btnDownloadJson");
 const btnDownloadMd = document.getElementById("btnDownloadMd");
 const btnExportPdf = document.getElementById("btnExportPdf");
 const embedMediaToggle = document.getElementById("embedMediaToggle");
+const broadAccessToggle = document.getElementById("broadAccessToggle");
+const revokeBroadAccessBtn = document.getElementById("revokeBroadAccessBtn");
+const settingsStatus = document.getElementById("settingsStatus");
 
 const statusContainer = document.getElementById("statusContainer");
 const statusTitle = document.getElementById("statusTitle");
@@ -39,6 +42,7 @@ const errorText = document.getElementById("errorText");
 let lastResult = null;
 let scrapeStartTime = 0;
 let currentSettings = { ...DEFAULT_SETTINGS };
+const BROAD_MEDIA_PERMISSION = { origins: ['<all_urls>'] };
 
 /**
  * Extract chat ID from URL
@@ -140,6 +144,7 @@ async function loadSettings() {
     if (embedMediaToggle) {
       embedMediaToggle.checked = Boolean(currentSettings[SETTINGS_KEYS.EMBED_REMOTE_MEDIA]);
     }
+    await refreshBroadAccessToggle();
   } catch (err) {
     console.error('[AI-Exporter] Error loading settings:', err);
   }
@@ -148,6 +153,52 @@ async function loadSettings() {
 async function saveSetting(key, value) {
   currentSettings[key] = value;
   await browserAPI.storage.local.set({ [key]: value });
+}
+
+function showSettingsStatus(message) {
+  if (!settingsStatus) return;
+  settingsStatus.textContent = message || '';
+  if (!message) return;
+  setTimeout(() => {
+    if (settingsStatus.textContent === message) settingsStatus.textContent = '';
+  }, 3000);
+}
+
+function permissionContains(permissions) {
+  return new Promise((resolve) => {
+    try {
+      browserAPI.permissions.contains(permissions, (result) => resolve(Boolean(result)));
+    } catch (_err) {
+      resolve(false);
+    }
+  });
+}
+
+function permissionRequest(permissions) {
+  return new Promise((resolve) => {
+    try {
+      browserAPI.permissions.request(permissions, (granted) => resolve(Boolean(granted)));
+    } catch (_err) {
+      resolve(false);
+    }
+  });
+}
+
+function permissionRemove(permissions) {
+  return new Promise((resolve) => {
+    try {
+      browserAPI.permissions.remove(permissions, (removed) => resolve(Boolean(removed)));
+    } catch (_err) {
+      resolve(false);
+    }
+  });
+}
+
+async function refreshBroadAccessToggle() {
+  if (!broadAccessToggle) return false;
+  const hasAccess = await permissionContains(BROAD_MEDIA_PERMISSION);
+  broadAccessToggle.checked = hasAccess;
+  return hasAccess;
 }
 
 /**
@@ -416,6 +467,26 @@ if (btnExportPdf) btnExportPdf.addEventListener("click", handleExportPdf);
 if (embedMediaToggle) {
   embedMediaToggle.addEventListener("change", async () => {
     await saveSetting(SETTINGS_KEYS.EMBED_REMOTE_MEDIA, embedMediaToggle.checked);
+  });
+}
+if (broadAccessToggle) {
+  broadAccessToggle.addEventListener("change", async () => {
+    if (broadAccessToggle.checked) {
+      const granted = await permissionRequest(BROAD_MEDIA_PERMISSION);
+      broadAccessToggle.checked = granted;
+      showSettingsStatus(granted ? "Broad access granted." : "Broad access not granted.");
+      return;
+    }
+    const removed = await permissionRemove(BROAD_MEDIA_PERMISSION);
+    await refreshBroadAccessToggle();
+    showSettingsStatus(removed ? "Broad access revoked." : "Broad access was not active.");
+  });
+}
+if (revokeBroadAccessBtn) {
+  revokeBroadAccessBtn.addEventListener("click", async () => {
+    const removed = await permissionRemove(BROAD_MEDIA_PERMISSION);
+    await refreshBroadAccessToggle();
+    showSettingsStatus(removed ? "Broad access revoked." : "Broad access was not active.");
   });
 }
 

@@ -342,9 +342,15 @@
             border-radius: 8px;
             padding: 10px 12px;
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .setting-row {
+            display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 12px;
         }
 
         .settings-copy {
@@ -353,6 +359,18 @@
             color: var(--muted);
             font-size: 0.78rem;
             line-height: 1.3;
+        }
+
+        .small-btn {
+            height: 30px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background-color: var(--card);
+            color: var(--foreground);
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 0 8px;
         }
 
         /* Footer */
@@ -590,8 +608,18 @@
         </div>
 
         <div class="settings-card">
-            <p class="settings-copy">Embed remote media in MD/PDF exports</p>
-            <input type="checkbox" id="embedMediaToggle" aria-label="Embed remote media in exports">
+            <div class="setting-row">
+                <p class="settings-copy">Embed remote media in MD/PDF exports</p>
+                <input type="checkbox" id="embedMediaToggle" aria-label="Embed remote media in exports">
+            </div>
+            <div class="setting-row">
+                <p class="settings-copy">Optional broad media host access</p>
+                <input type="checkbox" id="broadAccessToggle" aria-label="Allow broad media host access">
+            </div>
+            <div class="setting-row">
+                <button id="revokeBroadAccessBtn" class="small-btn">Revoke broad access</button>
+                <span id="settingsStatus" class="settings-copy"></span>
+            </div>
         </div>
 
         <!-- Footer -->
