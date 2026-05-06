@@ -15,7 +15,8 @@
     "activeTab",
     "storage",
     "downloads",
-    "clipboardWrite"
+    "clipboardWrite",
+    "scripting"
   ],
   "host_permissions": [
     "https://chatgpt.com/*",

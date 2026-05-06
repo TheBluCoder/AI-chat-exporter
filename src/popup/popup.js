@@ -72,6 +72,64 @@ function setExportButtonBlocked(label = "Unsupported Page") {
   }
 }
 
+function isNoReceiverError(message) {
+  if (!message) return false;
+  const text = String(message).toLowerCase();
+  return text.includes('receiving end does not exist') || text.includes('could not establish connection');
+}
+
+function sendMessageToTab(tabId, payload) {
+  return new Promise((resolve, reject) => {
+    browserAPI.tabs.sendMessage(tabId, payload, (response) => {
+      const err = browserAPI.runtime.lastError;
+      if (err) {
+        reject(new Error(err.message || 'Unknown sendMessage error'));
+        return;
+      }
+      resolve(response);
+    });
+  });
+}
+
+function executeScriptInTab(tabId, files) {
+  return new Promise((resolve, reject) => {
+    try {
+      browserAPI.scripting.executeScript(
+        {
+          target: { tabId },
+          files,
+        },
+        () => {
+          const err = browserAPI.runtime.lastError;
+          if (err) {
+            reject(new Error(err.message || 'Script injection failed'));
+            return;
+          }
+          resolve(true);
+        }
+      );
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+async function sendMessageWithRecovery(tabId, payload) {
+  try {
+    return await sendMessageToTab(tabId, payload);
+  } catch (err) {
+    if (!isNoReceiverError(err.message)) {
+      throw err;
+    }
+
+    setPageDiagnostic("Recovering connection to this tab...", "warn");
+    await executeScriptInTab(tabId, ["src/lib/browser-polyfill.js", "src/content-script.js"]);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    setPageDiagnostic("Connected. Retrying export...", "warn");
+    return await sendMessageToTab(tabId, payload);
+  }
+}
+
 /**
  * Extract chat ID from URL
  * @param {string} url - The current tab URL
@@ -361,57 +419,43 @@ async function handleExport() {
       throw new Error("Cannot access browser internal pages");
     }
 
-    let timeoutId = null;
-
     // Ensure prior selection mode overlays are cleared before normal export.
-    browserAPI.tabs.sendMessage(tab.id, { action: "CLEAR_SELECTION_MODE" }, () => {});
+    try {
+      await sendMessageWithRecovery(tab.id, { action: "CLEAR_SELECTION_MODE" });
+    } catch (_err) {
+      // ignore; export request below is authoritative
+    }
 
-    // Send message to content script
-    browserAPI.tabs.sendMessage(
-      tab.id,
-      { action: "SCRAPE_PAGE" },
-      (response) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        const duration = Date.now() - scrapeStartTime;
+    const timeoutMs = 30000;
+    const response = await Promise.race([
+      sendMessageWithRecovery(tab.id, { action: "SCRAPE_PAGE" }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for page content script response.")), timeoutMs))
+    ]);
 
-        // Check for runtime errors
-        if (browserAPI.runtime.lastError) {
-          showError(`Connection failed: ${browserAPI.runtime.lastError.message}. \nTry refreshing the page.`);
-          return;
-        }
+    const duration = Date.now() - scrapeStartTime;
+    if (!response) {
+      showError("No response from page. Try refreshing the page and wait for the conversation to load.");
+      return;
+    }
 
-        if (!response) {
-          showError("No response from page. Try refreshing the page and wait for the conversation to load.");
-          return;
-        }
+    // Store result
+    lastResult = response;
 
-        // Store result
-        lastResult = response;
+    // Display result
+    if (response.success) {
+      setPageDiagnostic("Export succeeded. Download options are available below.", "ok");
+      showSuccess(response, duration);
 
-        // Display result
-        if (response.success) {
-          setPageDiagnostic("Export succeeded. Download options are available below.", "ok");
-          showSuccess(response, duration);
-
-          // Save to storage cache
-          const chatId = extractChatId(tab.url);
-          if (chatId) {
-            saveCachedResult(response, chatId);
-          }
-        } else {
-          setPageDiagnostic(`Export failed: ${response.error || "unknown error"}`, "error");
-          showError(response.error || "Scraping failed");
-          console.error("Export failed:", response);
-        }
+      // Save to storage cache
+      const chatId = extractChatId(tab.url);
+      if (chatId) {
+        saveCachedResult(response, chatId);
       }
-    );
-
-    timeoutId = setTimeout(() => {
-      showError("Timed out waiting for page content script. Refresh the AI chat tab and try again.");
-      setPageDiagnostic("Timed out waiting for page response.", "error");
-    }, 30000);
+    } else {
+      setPageDiagnostic(`Export failed: ${response.error || "unknown error"}`, "error");
+      showError(response.error || "Scraping failed");
+      console.error("Export failed:", response);
+    }
   } catch (err) {
     showError(err.message);
     setPageDiagnostic(`Export error: ${err.message}`, "error");
@@ -428,52 +472,37 @@ async function handleExportSelected() {
     const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
     if (!tab) throw new Error("No active tab found");
 
-    let timeoutId = null;
-    browserAPI.tabs.sendMessage(
-      tab.id,
-      { action: "EXPORT_SELECTED" },
-      (response) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
+    const timeoutMs = 30000;
+    const response = await Promise.race([
+      sendMessageWithRecovery(tab.id, { action: "EXPORT_SELECTED" }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for selected export response.")), timeoutMs))
+    ]);
 
-        if (browserAPI.runtime.lastError) {
-          showError(`Connection failed: ${browserAPI.runtime.lastError.message}. Refresh the page and try again.`);
-          return;
-        }
+    if (!response) {
+      showError("No response from page. Try refreshing the page and retry Export Selected.");
+      return;
+    }
 
-        if (!response) {
-          showError("No response from page. Try refreshing the page and retry Export Selected.");
-          return;
-        }
+    if (response.selectionRequired) {
+      hideLoading();
+      setPageDiagnostic(response.message || "Selection mode is active. Pick messages and click Export Selected again.", "warn");
+      return;
+    }
 
-        if (response.selectionRequired) {
-          hideLoading();
-          setPageDiagnostic(response.message || "Selection mode is active. Pick messages and click Export Selected again.", "warn");
-          return;
-        }
+    const duration = Date.now() - scrapeStartTime;
+    lastResult = response;
 
-        const duration = Date.now() - scrapeStartTime;
-        lastResult = response;
-
-        if (response.success) {
-          showSuccess(response, duration);
-          setPageDiagnostic(`Selected export complete (${response.count || 0} messages).`, "ok");
-          const chatId = extractChatId(tab.url);
-          if (chatId) {
-            saveCachedResult(response, chatId);
-          }
-        } else {
-          showError(response.error || "Selected export failed");
-          setPageDiagnostic(`Selected export failed: ${response.error || "unknown error"}`, "error");
-        }
+    if (response.success) {
+      showSuccess(response, duration);
+      setPageDiagnostic(`Selected export complete (${response.count || 0} messages).`, "ok");
+      const chatId = extractChatId(tab.url);
+      if (chatId) {
+        saveCachedResult(response, chatId);
       }
-    );
-
-    timeoutId = setTimeout(() => {
-      showError("Timed out waiting for selected export response. Refresh the tab and retry.");
-      setPageDiagnostic("Timed out waiting for selected export response.", "error");
-    }, 30000);
+    } else {
+      showError(response.error || "Selected export failed");
+      setPageDiagnostic(`Selected export failed: ${response.error || "unknown error"}`, "error");
+    }
   } catch (err) {
     showError(err.message);
     setPageDiagnostic(`Selected export error: ${err.message}`, "error");
