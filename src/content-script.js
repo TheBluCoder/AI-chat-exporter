@@ -45,8 +45,15 @@ browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.error("[AI-Chat-Exporter] runScrape() not available - scraper not initialized for this platform");
       sendResponse({
         success: false,
-        error: "This page is not supported. Please navigate to ChatGPT, Claude, or Google Gemini to export conversations.",
+        error: `No scraper initialized for this page. URL: ${window.location.href}`,
         timestamp: new Date().toISOString(),
+        diagnostic: {
+          url: window.location.href,
+          runScrapeAvailable: typeof window.runScrape === "function",
+          scrapeGeminiChatAvailable: typeof window.scrapeGeminiChat === "function",
+          scrapeChatGPTAvailable: typeof window.scrapeChatGPT === "function",
+          scrapeClaudeAvailable: typeof window.scrapeClaude === "function",
+        }
       });
     }
 

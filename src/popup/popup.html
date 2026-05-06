@@ -193,7 +193,27 @@
 
         #exportBtn:disabled {
             opacity: 0.7;
-            cursor: wait;
+            cursor: not-allowed;
+        }
+
+        #pageDiagnostic {
+            min-height: 18px;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            line-height: 1.3;
+        }
+
+        #pageDiagnostic.ok {
+            color: #22c55e;
+        }
+
+        #pageDiagnostic.warn {
+            color: #f59e0b;
+        }
+
+        #pageDiagnostic.error {
+            color: #ef4444;
         }
 
         /* Divider */
@@ -546,10 +566,11 @@
 
         <!-- Main Action -->
         <div>
-            <button id="exportBtn">
-                <span class="material-symbols-outlined">download</span>
-                <span>Export Current Page</span>
+            <button id="exportBtn" disabled>
+                <span class="material-symbols-outlined">hourglass_empty</span>
+                <span>Checking page...</span>
             </button>
+            <div id="pageDiagnostic" class="warn">Checking whether this tab is supported...</div>
         </div>
 
         <!-- Error Display -->

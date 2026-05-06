@@ -25,6 +25,7 @@ const cacheToggle = document.getElementById("cacheToggle");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
 const revokeBroadAccessBtn = document.getElementById("revokeBroadAccessBtn");
 const settingsStatus = document.getElementById("settingsStatus");
+const pageDiagnostic = document.getElementById("pageDiagnostic");
 
 const statusContainer = document.getElementById("statusContainer");
 const statusTitle = document.getElementById("statusTitle");
@@ -45,6 +46,23 @@ let lastResult = null;
 let scrapeStartTime = 0;
 let currentSettings = { ...DEFAULT_SETTINGS };
 const BROAD_MEDIA_PERMISSION = { origins: ['<all_urls>'] };
+
+function setPageDiagnostic(message, kind = "warn") {
+  if (!pageDiagnostic) return;
+  pageDiagnostic.textContent = message;
+  pageDiagnostic.classList.remove("ok", "warn", "error");
+  pageDiagnostic.classList.add(kind);
+}
+
+function setExportButtonReady() {
+  exportBtn.disabled = false;
+  exportBtn.innerHTML = '<span class="material-symbols-outlined">download</span><span>Export Current Page</span>';
+}
+
+function setExportButtonBlocked(label = "Unsupported Page") {
+  exportBtn.disabled = true;
+  exportBtn.innerHTML = `<span class="material-symbols-outlined">block</span><span>${label}</span>`;
+}
 
 /**
  * Extract chat ID from URL
@@ -253,14 +271,14 @@ function showLoading() {
 
   exportBtn.disabled = true;
   exportBtn.innerHTML = '<span class="material-symbols-outlined">sync</span><span>Processing...</span>';
+  setPageDiagnostic("Export request sent. Waiting for page response...", "warn");
 }
 
 /**
  * Hide loading state
  */
 function hideLoading() {
-  exportBtn.disabled = false;
-  exportBtn.innerHTML = '<span class="material-symbols-outlined">download</span><span>Export Current Page</span>';
+  setExportButtonReady();
   progressBar.classList.remove("indeterminate");
 }
 
@@ -331,11 +349,16 @@ async function handleExport() {
       throw new Error("Cannot access browser internal pages");
     }
 
+    let timeoutId = null;
+
     // Send message to content script
     browserAPI.tabs.sendMessage(
       tab.id,
       { action: "SCRAPE_PAGE" },
       (response) => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
         const duration = Date.now() - scrapeStartTime;
 
         // Check for runtime errors
@@ -345,7 +368,7 @@ async function handleExport() {
         }
 
         if (!response) {
-          showError("No response from page. Try refreshing the page.");
+          showError("No response from page. Try refreshing the page and wait for the conversation to load.");
           return;
         }
 
@@ -354,6 +377,7 @@ async function handleExport() {
 
         // Display result
         if (response.success) {
+          setPageDiagnostic("Export succeeded. Download options are available below.", "ok");
           showSuccess(response, duration);
 
           // Save to storage cache
@@ -362,13 +386,20 @@ async function handleExport() {
             saveCachedResult(response, chatId);
           }
         } else {
+          setPageDiagnostic(`Export failed: ${response.error || "unknown error"}`, "error");
           showError(response.error || "Scraping failed");
           console.error("Export failed:", response);
         }
       }
     );
+
+    timeoutId = setTimeout(() => {
+      showError("Timed out waiting for page content script. Refresh the AI chat tab and try again.");
+      setPageDiagnostic("Timed out waiting for page response.", "error");
+    }, 30000);
   } catch (err) {
     showError(err.message);
+    setPageDiagnostic(`Export error: ${err.message}`, "error");
     console.error("Export error:", err);
   }
 }
@@ -570,28 +601,44 @@ if (reportIssueBtn) reportIssueBtn.addEventListener("click", handleReportIssue);
 async function checkSupportedPlatform() {
   try {
     const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.url) return;
+    if (!tab || !tab.url) {
+      setExportButtonBlocked("No Active Tab");
+      setPageDiagnostic("No active tab found.", "error");
+      return false;
+    }
 
     const url = tab.url;
     const supportedPatterns = Object.values(PLATFORM_URL_PATTERNS);
     const isSupported = supportedPatterns.some(pattern => pattern.test(url));
 
     if (!isSupported) {
-      showError("This extension only works on ChatGPT, Claude, or Google Gemini conversation pages.");
-      exportBtn.disabled = true;
+      setExportButtonBlocked("Unsupported Page");
+      setPageDiagnostic("This extension only works on ChatGPT, Claude, or Gemini conversation pages.", "error");
+      return false;
     }
+    setExportButtonReady();
+    setPageDiagnostic("Supported conversation page detected.", "ok");
+    return true;
   } catch (err) {
     console.error('[AI-Exporter] Error checking platform:', err);
+    setExportButtonBlocked("Check Failed");
+    setPageDiagnostic(`Page check failed: ${err.message}`, "error");
+    return false;
   }
 }
 
 // Check platform and load cached result
 (async () => {
+  setExportButtonBlocked("Checking Page");
+  setPageDiagnostic("Checking whether this tab is supported...", "warn");
   await loadSettings();
-  checkSupportedPlatform();
+  const supported = await checkSupportedPlatform();
   if (currentSettings[SETTINGS_KEYS.CACHE_EXPORTS]) {
     loadCachedResult();
   } else {
     clearCachedResult();
+  }
+  if (!supported) {
+    setExportButtonBlocked("Unsupported Page");
   }
 })();
