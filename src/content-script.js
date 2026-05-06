@@ -86,37 +86,74 @@ function getSelectionCandidates() {
 
   if (platform === 'chatgpt') {
     const turns = Array.from(document.querySelectorAll('[data-turn]'));
-    return turns.map((turn, idx) => {
-      const role = normalizeRole(turn.getAttribute('data-turn'));
-      const testId = turn.getAttribute('data-testid') || '';
-      const parsed = Number.parseInt(testId.split('-').pop(), 10);
-      const turnIndex = Number.isFinite(parsed) ? parsed : idx;
-      return { node: turn, role, turnIndex };
+    if (turns.length > 0) {
+      return turns.map((turn, idx) => {
+        const role = normalizeRole(turn.getAttribute('data-turn'));
+        const testId = turn.getAttribute('data-testid') || '';
+        const parsed = Number.parseInt(testId.split('-').pop(), 10);
+        const turnIndex = Number.isFinite(parsed) ? parsed : idx;
+        return { node: turn, role, turnIndex };
+      });
+    }
+
+    // Fallback for ChatGPT UI variants that do not expose data-turn.
+    const roleBlocks = Array.from(document.querySelectorAll('[data-message-author-role]'));
+    return roleBlocks.map((block, idx) => {
+      const role = normalizeRole(block.getAttribute('data-message-author-role'));
+      const container = block.closest('article, section, div') || block;
+      return { node: container, role, turnIndex: idx };
     });
   }
 
   if (platform === 'claude') {
     const groups = Array.from(document.querySelectorAll('div[data-test-render-count]'));
-    const rows = [];
-    groups.forEach((group, idx) => {
-      const user = group.querySelector('div[data-testid="user-message"]');
-      const pasted = group.querySelector('div[data-testid="file-thumbnail"]');
-      const model = group.querySelector('div.font-claude-response');
-      if (user) rows.push({ node: user, role: 'user', turnIndex: idx });
-      if (pasted) rows.push({ node: pasted, role: 'user', turnIndex: idx });
-      if (model) rows.push({ node: model, role: 'model', turnIndex: idx });
+    if (groups.length > 0) {
+      const rows = [];
+      groups.forEach((group, idx) => {
+        const user = group.querySelector('div[data-testid="user-message"]');
+        const pasted = group.querySelector('div[data-testid="file-thumbnail"]');
+        const model = group.querySelector('div.font-claude-response');
+        if (user) rows.push({ node: user, role: 'user', turnIndex: idx });
+        if (pasted) rows.push({ node: pasted, role: 'user', turnIndex: idx });
+        if (model) rows.push({ node: model, role: 'model', turnIndex: idx });
+      });
+      return rows;
+    }
+
+    // Fallback for Claude layout variants.
+    const fallbackRows = [];
+    Array.from(document.querySelectorAll('div[data-testid="user-message"]')).forEach((node, idx) => {
+      fallbackRows.push({ node, role: 'user', turnIndex: idx });
     });
-    return rows;
+    Array.from(document.querySelectorAll('div[data-testid="file-thumbnail"]')).forEach((node, idx) => {
+      fallbackRows.push({ node, role: 'user', turnIndex: idx });
+    });
+    Array.from(document.querySelectorAll('div.font-claude-response')).forEach((node, idx) => {
+      fallbackRows.push({ node, role: 'model', turnIndex: idx });
+    });
+    return fallbackRows;
   }
 
   if (platform === 'gemini') {
     const sets = Array.from(document.querySelectorAll('message-set'));
+    if (sets.length > 0) {
+      const rows = [];
+      sets.forEach((set, idx) => {
+        const user = set.querySelector('user-query');
+        const model = set.querySelector('model-response');
+        if (user) rows.push({ node: user, role: 'user', turnIndex: idx });
+        if (model) rows.push({ node: model, role: 'model', turnIndex: idx });
+      });
+      return rows;
+    }
+
+    // Fallback for Gemini variants: pair global user/model sequences.
     const rows = [];
-    sets.forEach((set, idx) => {
-      const user = set.querySelector('user-query');
-      const model = set.querySelector('model-response');
-      if (user) rows.push({ node: user, role: 'user', turnIndex: idx });
-      if (model) rows.push({ node: model, role: 'model', turnIndex: idx });
+    Array.from(document.querySelectorAll('user-query')).forEach((node, idx) => {
+      rows.push({ node, role: 'user', turnIndex: idx });
+    });
+    Array.from(document.querySelectorAll('model-response')).forEach((node, idx) => {
+      rows.push({ node, role: 'model', turnIndex: idx });
     });
     return rows;
   }
