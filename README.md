@@ -1,6 +1,6 @@
 # AI Chat Exporter
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
 [![Architecture](https://img.shields.io/badge/architecture-ES6%20Modules-brightgreen.svg)](docs/ES6_MIGRATION.md)
@@ -13,13 +13,15 @@ A powerful, browser-agnostic extension to export conversations from popular AI p
 
 - **Multi-Platform Support**: Export from Gemini, Claude, and ChatGPT
 - **Multiple Export Formats**: JSON, Markdown, and PDF
-- **Media Embedding**: Automatically embeds images as base64 in exports
+- **Media Embedding Control**: Choose URL-only exports or embedded media for MD/PDF
 - **Document Extraction**: Captures uploaded files, embedded documents, and preview panels
 - **Browser Agnostic**: Works on Chrome, Edge, Firefox, and Safari
 - **Modern UI**: Clean, dark-themed interface
 - **Fast & Efficient**: Optimized scraping with automatic scroll handling
 - **ES6 Modules**: Modern architecture with 70% less code duplication
 - **Template Pattern**: Easily extensible for new platforms
+- **Export Selected**: Select one message to export from that point onward, or select multiple messages to export only those in original order
+- **Privacy-First Settings**: Optional broad host access, cache controls, and clearer diagnostics
 
 ## Quick Start
 
@@ -53,21 +55,30 @@ Works on Chrome, Edge, Brave, and other Chromium-based browsers.
 
 1. Navigate to any supported AI chat page
 2. Click the extension icon in your browser toolbar
-3. Click "Export Current Page"
+3. Choose one flow:
+   - **Export Current Page**: Export full conversation.
+   - **Export Selected**:
+     - Click once to enter selection mode.
+     - Select one or more messages in the page.
+     - Click **Export Selected** again to export.
+       - 1 selected message: exports from that point to latest.
+       - 2+ selected messages: exports only selected messages in original order.
 4. Choose your desired export format:
    - **Copy JSON**: Copy to clipboard
    - **Download JSON**: Save as JSON file
-   - **Download MD**: Save as Markdown with embedded images
+   - **Download MD**: Save as Markdown (embedded media optional)
    - **Export PDF**: Print to PDF
 
 ### Known Issues
 
-**First-time page load:** When you first navigate to ChatGPT, Claude, or Gemini, you may encounter one of these errors:
-- "Connection failed: Could not establish connection. Receiving end does not exist."
-- "This page is not supported. Please navigate to ChatGPT, Claude, or Google Gemini to export conversations."
+Most previously reported issues are now fixed in v2.0.0.
 
-**Workaround:** Simply **refresh the page** (F5 or Ctrl+R) and the extension will work normally. This is a timing issue where the extension hasn't fully initialized yet. A fix is in development for v1.1.
+Current known issue:
+- **Claude artifact edge cases**: some complex artifact/preview extraction cases can still fail depending on Claude UI state and panel behavior.
 
+Notes:
+- First-load/receiver connection issues were mitigated with auto-recovery.
+- Gemini root-route support and detection issues were fixed.
 ## Supported Platforms
 
 | Platform | Active Chat | Shared Links | Preview/Artifacts | Status |
@@ -81,7 +92,7 @@ Works on Chrome, Edge, Brave, and other Chromium-based browsers.
 - **ChatGPT**: Progressive scroll extraction for lazy-loaded conversations, code blocks, generated images
 - **Claude**: Preview panel extraction (artifacts), code blocks with syntax highlighting (PDF extraction not yet supported)
 
-## Project Structure (v1.0 ES6 Architecture)
+## Project Structure (v2.0 ES6 Architecture)
 
 ```
 ai-chat-exporter/
@@ -192,6 +203,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with modern web technologies
 - Uses [Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/) for future-proof compatibility
 - Inspired by the need for portable AI conversation archives
+- Security and privacy hardening contributions by [InfoSpunj](https://github.com/InfoSpunj)
 
 ## Support
 
@@ -204,18 +216,21 @@ Found an issue? The extension includes a built-in "Report Issue" button that aut
 
 ## Roadmap
 
-### v1.0 (Current) ✅
+### v2.0 (Current)
 - [x] ES6 modules architecture with template method pattern
 - [x] Complete ChatGPT scraper (text, code blocks, generated images)
 - [x] Complete Gemini scraper (uploaded documents, immersive docs, shared links)
 - [x] Complete Claude scraper (artifacts, code blocks, preview panels)
 - [x] Multiple export formats (JSON, Markdown, PDF)
-- [x] Base64 media embedding
+- [x] Media embedding controls (embed or URL-only)
+- [x] Export Selected mode (single-anchor + multi-select)
+- [x] Auto-recovery for missing content-script connection
+- [x] Privacy-first cache controls and optional broad media host access
 - [x] 70% code reduction through shared utilities
 - [x] Cross-browser compatibility (Chrome, Edge, Firefox, Safari)
 - [x] GitHub issue reporting integration
 
-### v2.0 (Planned)
+### v2.1 (Planned)
 - [ ] Complete migration to TypeScript
 - [ ] Type-safe scraper implementations
 - [ ] Enhanced IDE support with full type inference
@@ -235,3 +250,4 @@ Found an issue? The extension includes a built-in "Report Issue" button that aut
 **Made with ❤️ by [bluCoder](https://github.com/TheBluCoder)**
 
 [⭐ Star this repo](https://github.com/TheBluCoder/AI-chat-exporter) if you find it helpful!
+

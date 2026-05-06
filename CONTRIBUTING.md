@@ -265,7 +265,7 @@ Create documentation in `docs/PLATFORM_NAME_SCRAPER_GUIDE.md` explaining:
 1. Update the README.md with details of changes if needed
 2. Update documentation in `docs/` if needed
 3. Ensure all tests pass
-4. Update the version number in `package.json` and `manifest.json` (following [SemVer](https://semver.org/))
+4. Update the version number in `manifest.json` (following [SemVer](https://semver.org/))
 
 ### Pull Request Template
 
@@ -297,9 +297,9 @@ Add screenshots here
 
 ## Getting Help
 
-- Check existing [Issues](https://github.com/yourusername/ai-chat-exporter/issues)
+- Check existing [Issues](https://github.com/TheBluCoder/AI-chat-exporter/issues)
 - Read the [Documentation](docs/)
-- Ask in [Discussions](https://github.com/yourusername/ai-chat-exporter/discussions)
+- Ask in [Discussions](https://github.com/TheBluCoder/AI-chat-exporter/discussions)
 
 ## Resources
 
