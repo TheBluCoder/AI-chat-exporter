@@ -185,6 +185,37 @@
             font-weight: 600;
         }
 
+        #exportSelectedBtn {
+            margin-top: 8px;
+            height: 40px;
+            background-color: #262626;
+            background-color: var(--card);
+            color: #fafafa;
+            color: var(--foreground);
+            border: 1px solid #333;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        #exportSelectedBtn:hover:not(:disabled) {
+            background-color: #2d2d2d;
+            background-color: var(--card-hover);
+        }
+
+        #exportSelectedBtn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         #exportBtn:hover:not(:disabled) {
             background-color: #0073e6;
             /* Fallback */
@@ -569,6 +600,10 @@
             <button id="exportBtn" disabled>
                 <span class="material-symbols-outlined">hourglass_empty</span>
                 <span>Checking page...</span>
+            </button>
+            <button id="exportSelectedBtn" disabled>
+                <span class="material-symbols-outlined">select_all</span>
+                <span>Export Selected</span>
             </button>
             <div id="pageDiagnostic" class="warn">Checking whether this tab is supported...</div>
         </div>

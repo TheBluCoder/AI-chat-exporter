@@ -15,6 +15,7 @@ import {
 
 // DOM elements
 const exportBtn = document.getElementById("exportBtn");
+const exportSelectedBtn = document.getElementById("exportSelectedBtn");
 const btnCopyJson = document.getElementById("btnCopyJson");
 const btnDownloadJson = document.getElementById("btnDownloadJson");
 const btnDownloadMd = document.getElementById("btnDownloadMd");
@@ -57,11 +58,18 @@ function setPageDiagnostic(message, kind = "warn") {
 function setExportButtonReady() {
   exportBtn.disabled = false;
   exportBtn.innerHTML = '<span class="material-symbols-outlined">download</span><span>Export Current Page</span>';
+  if (exportSelectedBtn) {
+    exportSelectedBtn.disabled = false;
+    exportSelectedBtn.innerHTML = '<span class="material-symbols-outlined">select_all</span><span>Export Selected</span>';
+  }
 }
 
 function setExportButtonBlocked(label = "Unsupported Page") {
   exportBtn.disabled = true;
   exportBtn.innerHTML = `<span class="material-symbols-outlined">block</span><span>${label}</span>`;
+  if (exportSelectedBtn) {
+    exportSelectedBtn.disabled = true;
+  }
 }
 
 /**
@@ -271,6 +279,10 @@ function showLoading() {
 
   exportBtn.disabled = true;
   exportBtn.innerHTML = '<span class="material-symbols-outlined">sync</span><span>Processing...</span>';
+  if (exportSelectedBtn) {
+    exportSelectedBtn.disabled = true;
+    exportSelectedBtn.innerHTML = '<span class="material-symbols-outlined">sync</span><span>Processing...</span>';
+  }
   setPageDiagnostic("Export request sent. Waiting for page response...", "warn");
 }
 
@@ -351,6 +363,9 @@ async function handleExport() {
 
     let timeoutId = null;
 
+    // Ensure prior selection mode overlays are cleared before normal export.
+    browserAPI.tabs.sendMessage(tab.id, { action: "CLEAR_SELECTION_MODE" }, () => {});
+
     // Send message to content script
     browserAPI.tabs.sendMessage(
       tab.id,
@@ -401,6 +416,67 @@ async function handleExport() {
     showError(err.message);
     setPageDiagnostic(`Export error: ${err.message}`, "error");
     console.error("Export error:", err);
+  }
+}
+
+async function handleExportSelected() {
+  scrapeStartTime = Date.now();
+  showLoading();
+  setPageDiagnostic("Select one or more messages in the page. Click Export Selected again to confirm export.", "warn");
+
+  try {
+    const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
+    if (!tab) throw new Error("No active tab found");
+
+    let timeoutId = null;
+    browserAPI.tabs.sendMessage(
+      tab.id,
+      { action: "EXPORT_SELECTED" },
+      (response) => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+
+        if (browserAPI.runtime.lastError) {
+          showError(`Connection failed: ${browserAPI.runtime.lastError.message}. Refresh the page and try again.`);
+          return;
+        }
+
+        if (!response) {
+          showError("No response from page. Try refreshing the page and retry Export Selected.");
+          return;
+        }
+
+        if (response.selectionRequired) {
+          hideLoading();
+          setPageDiagnostic(response.message || "Selection mode is active. Pick messages and click Export Selected again.", "warn");
+          return;
+        }
+
+        const duration = Date.now() - scrapeStartTime;
+        lastResult = response;
+
+        if (response.success) {
+          showSuccess(response, duration);
+          setPageDiagnostic(`Selected export complete (${response.count || 0} messages).`, "ok");
+          const chatId = extractChatId(tab.url);
+          if (chatId) {
+            saveCachedResult(response, chatId);
+          }
+        } else {
+          showError(response.error || "Selected export failed");
+          setPageDiagnostic(`Selected export failed: ${response.error || "unknown error"}`, "error");
+        }
+      }
+    );
+
+    timeoutId = setTimeout(() => {
+      showError("Timed out waiting for selected export response. Refresh the tab and retry.");
+      setPageDiagnostic("Timed out waiting for selected export response.", "error");
+    }, 30000);
+  } catch (err) {
+    showError(err.message);
+    setPageDiagnostic(`Selected export error: ${err.message}`, "error");
   }
 }
 
@@ -547,6 +623,7 @@ function handleReportIssue(e) {
 
 // Event listeners
 exportBtn.addEventListener("click", handleExport);
+if (exportSelectedBtn) exportSelectedBtn.addEventListener("click", handleExportSelected);
 if (btnCopyJson) btnCopyJson.addEventListener("click", handleCopyJson);
 if (btnDownloadJson) btnDownloadJson.addEventListener("click", handleDownloadJson);
 if (btnDownloadMd) btnDownloadMd.addEventListener("click", handleDownloadMd);
