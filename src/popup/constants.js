@@ -23,7 +23,7 @@ export const SETTINGS_KEYS = {
 
 export const DEFAULT_SETTINGS = {
   [SETTINGS_KEYS.EMBED_REMOTE_MEDIA]: false,
-  [SETTINGS_KEYS.CACHE_EXPORTS]: true
+  [SETTINGS_KEYS.CACHE_EXPORTS]: false
 };
 
 // Platform URL Patterns (duplicated from scrapers/base/constants.js for popup context)
