@@ -21,6 +21,8 @@ const btnDownloadMd = document.getElementById("btnDownloadMd");
 const btnExportPdf = document.getElementById("btnExportPdf");
 const embedMediaToggle = document.getElementById("embedMediaToggle");
 const broadAccessToggle = document.getElementById("broadAccessToggle");
+const cacheToggle = document.getElementById("cacheToggle");
+const clearCacheBtn = document.getElementById("clearCacheBtn");
 const revokeBroadAccessBtn = document.getElementById("revokeBroadAccessBtn");
 const settingsStatus = document.getElementById("settingsStatus");
 
@@ -110,8 +112,8 @@ async function loadCachedResult() {
       // Show the cached result in UI
       showSuccess(lastResult, cachedDuration);
     } else {
-      // Clear invalid cache
-      await browserAPI.storage.local.clear();
+      // Clear invalid cache without removing settings
+      await clearCachedResult();
     }
   } catch (err) {
     console.error('[AI-Exporter] Error loading cached result:', err);
@@ -125,6 +127,11 @@ async function loadCachedResult() {
  */
 async function saveCachedResult(result, chatId) {
   try {
+    if (!currentSettings[SETTINGS_KEYS.CACHE_EXPORTS]) {
+      await clearPersistentCachedResult();
+      return;
+    }
+
     if (!chatId || !result) return;
 
     await browserAPI.storage.local.set({
@@ -137,12 +144,32 @@ async function saveCachedResult(result, chatId) {
   }
 }
 
+async function clearPersistentCachedResult() {
+  try {
+    await browserAPI.storage.local.remove(['chatId', 'lastResult', 'timestamp']);
+  } catch (err) {
+    console.error('[AI-Exporter] Error clearing persistent cache:', err);
+  }
+}
+
+async function clearCachedResult() {
+  try {
+    await clearPersistentCachedResult();
+    lastResult = null;
+  } catch (err) {
+    console.error('[AI-Exporter] Error clearing cache:', err);
+  }
+}
+
 async function loadSettings() {
   try {
     const data = await browserAPI.storage.local.get(Object.values(SETTINGS_KEYS));
     currentSettings = { ...DEFAULT_SETTINGS, ...data };
     if (embedMediaToggle) {
       embedMediaToggle.checked = Boolean(currentSettings[SETTINGS_KEYS.EMBED_REMOTE_MEDIA]);
+    }
+    if (cacheToggle) {
+      cacheToggle.checked = Boolean(currentSettings[SETTINGS_KEYS.CACHE_EXPORTS]);
     }
     await refreshBroadAccessToggle();
   } catch (err) {
@@ -511,6 +538,21 @@ if (broadAccessToggle) {
     showSettingsStatus(removed ? "Broad access revoked." : "Broad access was not active.");
   });
 }
+if (cacheToggle) {
+  cacheToggle.addEventListener("change", async () => {
+    await saveSetting(SETTINGS_KEYS.CACHE_EXPORTS, cacheToggle.checked);
+    if (!cacheToggle.checked) {
+      await clearPersistentCachedResult();
+    }
+    showSettingsStatus(cacheToggle.checked ? "Persistent export cache enabled." : "Persistent export cache disabled.");
+  });
+}
+if (clearCacheBtn) {
+  clearCacheBtn.addEventListener("click", async () => {
+    await clearCachedResult();
+    showSettingsStatus("Cached export data cleared.");
+  });
+}
 if (revokeBroadAccessBtn) {
   revokeBroadAccessBtn.addEventListener("click", async () => {
     const removed = await permissionRemove(BROAD_MEDIA_PERMISSION);
@@ -547,5 +589,9 @@ async function checkSupportedPlatform() {
 (async () => {
   await loadSettings();
   checkSupportedPlatform();
-  loadCachedResult();
+  if (currentSettings[SETTINGS_KEYS.CACHE_EXPORTS]) {
+    loadCachedResult();
+  } else {
+    clearCachedResult();
+  }
 })();
