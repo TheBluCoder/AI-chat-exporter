@@ -142,13 +142,51 @@ function downloadFile(content, filename, contentType) {
   const blob = new Blob([content], { type: contentType });
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      try { URL.revokeObjectURL(url); } catch (_err) {}
+    };
+
+    try {
+      if (typeof browserAPI !== "undefined" && browserAPI.downloads && browserAPI.downloads.download) {
+        browserAPI.downloads.download(
+          {
+            url,
+            filename,
+            saveAs: false,
+            conflictAction: "uniquify"
+          },
+          (downloadId) => {
+            const runtimeError = browserAPI.runtime && browserAPI.runtime.lastError;
+            setTimeout(cleanup, 60000);
+            if (runtimeError) {
+              reject(new Error(runtimeError.message || "Browser download API failed"));
+              return;
+            }
+            if (typeof downloadId === "undefined") {
+              reject(new Error("Browser download API did not return a download id"));
+              return;
+            }
+            resolve(downloadId);
+          }
+        );
+        return;
+      }
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(cleanup, 60000);
+      resolve(null);
+    } catch (err) {
+      cleanup();
+      reject(err);
+    }
+  });
 }
 
 // ============================================================================
@@ -161,10 +199,37 @@ function downloadFile(content, filename, contentType) {
  * @returns {Promise<boolean>} True if successful
  */
 async function copyToClipboard(text) {
+  copyToClipboard.lastError = "";
+
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
   } catch (err) {
+    copyToClipboard.lastError = err && err.message ? err.message : String(err);
+    console.warn("[Utils] navigator.clipboard.writeText failed, trying fallback:", err);
+  }
+
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (!ok) {
+      copyToClipboard.lastError = "document.execCommand('copy') returned false";
+    }
+    return ok;
+  } catch (err) {
+    copyToClipboard.lastError = err && err.message ? err.message : String(err);
     console.error("Failed to copy:", err);
     return false;
   }

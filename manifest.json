@@ -13,7 +13,9 @@
   },
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "downloads",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "https://chatgpt.com/*",

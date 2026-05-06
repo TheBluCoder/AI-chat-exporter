@@ -350,7 +350,10 @@ async function handleExport() {
  * Handle copy button click
  */
 async function handleCopyJson() {
-  if (!lastResult) return;
+  if (!lastResult) {
+    showError("No export result is available to copy yet. Run Export Current Page first.");
+    return;
+  }
 
   const jsonString = JSON.stringify(lastResult, null, JSON_INDENT_SPACES);
   const success = await copyToClipboard(jsonString);
@@ -362,6 +365,8 @@ async function handleCopyJson() {
       btnCopyJson.innerHTML = originalHtml;
     }, UI_FEEDBACK_TIMEOUT_MS);
   } else {
+    const detail = copyToClipboard.lastError ? ` ${copyToClipboard.lastError}` : "";
+    showError(`Clipboard copy failed.${detail}`);
     btnCopyJson.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
     setTimeout(() => {
       btnCopyJson.innerHTML = originalHtml;
@@ -372,18 +377,37 @@ async function handleCopyJson() {
 /**
  * Handle Download JSON
  */
-function handleDownloadJson() {
-  if (!lastResult) return;
+async function handleDownloadJson() {
+  if (!lastResult) {
+    showError("No export result is available to download yet. Run Export Current Page first.");
+    return;
+  }
   const filename = generateFilename(lastResult, 'json');
   const jsonString = JSON.stringify(lastResult, null, JSON_INDENT_SPACES);
-  downloadFile(jsonString, filename, "application/json");
+  const originalHtml = btnDownloadJson.innerHTML;
+  btnDownloadJson.innerHTML = `<span class="material-symbols-outlined">sync</span> Downloading...`;
+
+  try {
+    await downloadFile(jsonString, filename, "application/json");
+    btnDownloadJson.innerHTML = `<span class="material-symbols-outlined">check</span> Downloaded`;
+  } catch (err) {
+    showError(`JSON download failed: ${err.message || err}`);
+    btnDownloadJson.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
+  } finally {
+    setTimeout(() => {
+      btnDownloadJson.innerHTML = originalHtml;
+    }, UI_FEEDBACK_TIMEOUT_MS);
+  }
 }
 
 /**
  * Handle Download Markdown
  */
 async function handleDownloadMd() {
-  if (!lastResult) return;
+  if (!lastResult) {
+    showError("No export result is available to download yet. Run Export Current Page first.");
+    return;
+  }
   const filename = generateFilename(lastResult, 'md');
 
   // Temporarily show loading on button
@@ -394,10 +418,11 @@ async function handleDownloadMd() {
     const md = await convertToMarkdown(lastResult, {
       embedRemoteMedia: currentSettings[SETTINGS_KEYS.EMBED_REMOTE_MEDIA]
     });
-    downloadFile(md, filename, "text/markdown");
+    await downloadFile(md, filename, "text/markdown");
     btnDownloadMd.innerHTML = originalHtml;
   } catch (e) {
     console.error(e);
+    showError(`Markdown download failed: ${e.message || e}`);
     btnDownloadMd.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
     setTimeout(() => btnDownloadMd.innerHTML = originalHtml, UI_FEEDBACK_TIMEOUT_MS);
   }
@@ -407,7 +432,10 @@ async function handleDownloadMd() {
  * Handle PDF Export
  */
 async function handleExportPdf() {
-  if (!lastResult) return;
+  if (!lastResult) {
+    showError("No export result is available for PDF export yet. Run Export Current Page first.");
+    return;
+  }
 
   const originalHtml = btnExportPdf.innerHTML;
   btnExportPdf.innerHTML = `<span class="material-symbols-outlined">sync</span> Processing...`;
@@ -419,6 +447,7 @@ async function handleExportPdf() {
     btnExportPdf.innerHTML = originalHtml;
   } catch (e) {
     console.error(e);
+    showError(`PDF export failed: ${e.message || e}`);
     btnExportPdf.innerHTML = `<span class="material-symbols-outlined">error</span> Error`;
     setTimeout(() => btnExportPdf.innerHTML = originalHtml, UI_FEEDBACK_TIMEOUT_MS);
   }
