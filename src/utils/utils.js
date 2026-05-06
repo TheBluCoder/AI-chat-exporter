@@ -466,6 +466,7 @@ async function exportToPDF(result, options = {}) {
               if (base64) {
                 m.url = base64;
                 m.src = base64;
+                m.__embedded = true;
               }
             } catch (e) {
               console.warn("[Utils] Failed to embed image:", url);
@@ -512,8 +513,13 @@ async function exportToPDF(result, options = {}) {
       </div>
       <div class="chat">
         ${(data.messages || []).map(msg => {
+          const rawMessageText = msg.content || msg.text || '';
+          // When media embedding is off, convert markdown image tokens to plain URLs in PDF body text.
+          const normalizedMessageText = embedRemoteMedia
+            ? rawMessageText
+            : rawMessageText.replace(/!\[[^\]]*\]\(([^)\s]+)\)/g, '$1');
           // Escape HTML entities first, then replace newlines with <br>
-          const messageText = escapeHtml(msg.content || msg.text || '').replace(/\n/g, '<br>');
+          const messageText = escapeHtml(normalizedMessageText).replace(/\n/g, '<br>');
           const uploadedFiles = msg.uploaded_files || msg.uploadedFiles;
           const media = msg.media || msg.images;
 
@@ -535,7 +541,11 @@ async function exportToPDF(result, options = {}) {
                 ${media.map(m => {
                   const imgSrc = m.url || m.src || m.base64;
                   const imgName = m.name || m.alt || '';
-                  return m.type === 'image' || !m.type ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(imgName)}">` : `<a href="${escapeHtml(imgSrc)}">${escapeHtml(imgName || 'Link')}</a>`;
+                  const showImage = Boolean(m.base64 || m.__embedded);
+                  if ((m.type === 'image' || !m.type) && showImage) {
+                    return `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(imgName)}">`;
+                  }
+                  return `<a href="${escapeHtml(imgSrc)}">${escapeHtml(imgSrc || imgName || 'Link')}</a>`;
                 }).join('<br>')}
               </div>
             ` : ''}
