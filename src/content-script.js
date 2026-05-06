@@ -47,6 +47,18 @@ function getCurrentPlatform() {
   return 'unknown';
 }
 
+function mapScrapeError(error) {
+  const raw = error && error.message ? error.message : String(error || 'Unknown scrape error');
+  const lower = raw.toLowerCase();
+  const onGemini = window.location.href.includes('gemini.google.com');
+
+  if (onGemini && (lower.includes('could not find chat app container') || lower.includes('container'))) {
+    return "Gemini page detected, but no conversation was found yet. Open a Gemini conversation thread (or send a message), then try export again.";
+  }
+
+  return raw;
+}
+
 function ensureSelectionStyle() {
   if (document.getElementById(SELECTION_STYLE_ID)) return;
   const style = document.createElement('style');
@@ -334,7 +346,7 @@ browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
           console.error("[AI-Chat-Exporter] Scrape failed:", error);
           sendResponse({
             success: false,
-            error: error.message,
+            error: mapScrapeError(error),
             timestamp: new Date().toISOString(),
           });
         });
