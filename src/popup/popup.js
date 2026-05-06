@@ -8,7 +8,9 @@ import {
   JSON_INDENT_SPACES,
   MS_TO_SECONDS,
   UI_FEEDBACK_TIMEOUT_MS,
-  PLATFORM_URL_PATTERNS
+  PLATFORM_URL_PATTERNS,
+  SETTINGS_KEYS,
+  DEFAULT_SETTINGS
 } from './constants.js';
 
 // DOM elements
@@ -17,6 +19,7 @@ const btnCopyJson = document.getElementById("btnCopyJson");
 const btnDownloadJson = document.getElementById("btnDownloadJson");
 const btnDownloadMd = document.getElementById("btnDownloadMd");
 const btnExportPdf = document.getElementById("btnExportPdf");
+const embedMediaToggle = document.getElementById("embedMediaToggle");
 
 const statusContainer = document.getElementById("statusContainer");
 const statusTitle = document.getElementById("statusTitle");
@@ -35,6 +38,7 @@ const errorText = document.getElementById("errorText");
 
 let lastResult = null;
 let scrapeStartTime = 0;
+let currentSettings = { ...DEFAULT_SETTINGS };
 
 /**
  * Extract chat ID from URL
@@ -127,6 +131,23 @@ async function saveCachedResult(result, chatId) {
   } catch (err) {
     console.error('[AI-Exporter] Error saving to cache:', err);
   }
+}
+
+async function loadSettings() {
+  try {
+    const data = await browserAPI.storage.local.get(Object.values(SETTINGS_KEYS));
+    currentSettings = { ...DEFAULT_SETTINGS, ...data };
+    if (embedMediaToggle) {
+      embedMediaToggle.checked = Boolean(currentSettings[SETTINGS_KEYS.EMBED_REMOTE_MEDIA]);
+    }
+  } catch (err) {
+    console.error('[AI-Exporter] Error loading settings:', err);
+  }
+}
+
+async function saveSetting(key, value) {
+  currentSettings[key] = value;
+  await browserAPI.storage.local.set({ [key]: value });
 }
 
 /**
@@ -319,7 +340,9 @@ async function handleDownloadMd() {
   btnDownloadMd.innerHTML = `<span class="material-symbols-outlined">sync</span> Generating...`;
 
   try {
-    const md = await convertToMarkdown(lastResult);
+    const md = await convertToMarkdown(lastResult, {
+      embedRemoteMedia: currentSettings[SETTINGS_KEYS.EMBED_REMOTE_MEDIA]
+    });
     downloadFile(md, filename, "text/markdown");
     btnDownloadMd.innerHTML = originalHtml;
   } catch (e) {
@@ -339,7 +362,9 @@ async function handleExportPdf() {
   btnExportPdf.innerHTML = `<span class="material-symbols-outlined">sync</span> Processing...`;
 
   try {
-    await exportToPDF(lastResult);
+    await exportToPDF(lastResult, {
+      embedRemoteMedia: currentSettings[SETTINGS_KEYS.EMBED_REMOTE_MEDIA]
+    });
     btnExportPdf.innerHTML = originalHtml;
   } catch (e) {
     console.error(e);
@@ -388,6 +413,11 @@ if (btnCopyJson) btnCopyJson.addEventListener("click", handleCopyJson);
 if (btnDownloadJson) btnDownloadJson.addEventListener("click", handleDownloadJson);
 if (btnDownloadMd) btnDownloadMd.addEventListener("click", handleDownloadMd);
 if (btnExportPdf) btnExportPdf.addEventListener("click", handleExportPdf);
+if (embedMediaToggle) {
+  embedMediaToggle.addEventListener("change", async () => {
+    await saveSetting(SETTINGS_KEYS.EMBED_REMOTE_MEDIA, embedMediaToggle.checked);
+  });
+}
 
 const reportIssueBtn = document.getElementById("reportIssue");
 if (reportIssueBtn) reportIssueBtn.addEventListener("click", handleReportIssue);
@@ -414,5 +444,8 @@ async function checkSupportedPlatform() {
 }
 
 // Check platform and load cached result
-checkSupportedPlatform();
-loadCachedResult();
+(async () => {
+  await loadSettings();
+  checkSupportedPlatform();
+  loadCachedResult();
+})();
