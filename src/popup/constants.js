@@ -15,6 +15,17 @@ export const MS_TO_SECONDS = 1000;
 // UI Feedback
 export const UI_FEEDBACK_TIMEOUT_MS = 2000;
 
+// Privacy settings
+export const SETTINGS_KEYS = {
+  EMBED_REMOTE_MEDIA: 'embedRemoteMedia',
+  CACHE_EXPORTS: 'cacheExports'
+};
+
+export const DEFAULT_SETTINGS = {
+  [SETTINGS_KEYS.EMBED_REMOTE_MEDIA]: false,
+  [SETTINGS_KEYS.CACHE_EXPORTS]: true
+};
+
 // Platform URL Patterns (duplicated from scrapers/base/constants.js for popup context)
 export const PLATFORM_URL_PATTERNS = {
   CHATGPT: /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//,

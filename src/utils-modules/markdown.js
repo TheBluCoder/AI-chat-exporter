@@ -26,7 +26,8 @@ export function generateFilename(result, extension) {
  * @param {Object} result - Scraping result object
  * @returns {Promise<string>} Markdown formatted string
  */
-export async function convertToMarkdown(result) {
+export async function convertToMarkdown(result, options = {}) {
+  const embedRemoteMedia = Boolean(options.embedRemoteMedia);
   let md = `# Chat Export - ${escapeHtmlForMarkdown(result.platform || 'Unknown Platform')}\n\n`;
   md += `**URL:** ${escapeHtmlForMarkdown(result.url)}\n`;
   md += `**Date:** ${new Date(result.timestamp).toLocaleString()}\n\n`;
@@ -61,10 +62,10 @@ export async function convertToMarkdown(result) {
           let mediaUrl = m.url || m.src;
           const base64Data = m.base64;
 
-          // Use base64 if available, otherwise try to convert
+          // Use base64 if already present, otherwise embed only when enabled
           if (base64Data) {
             mediaUrl = base64Data;
-          } else if (mediaUrl && (m.type === 'image' || !m.type)) {
+          } else if (embedRemoteMedia && mediaUrl && (m.type === 'image' || !m.type)) {
             const base64 = await urlToBase64(mediaUrl);
             if (base64) mediaUrl = base64;
           }

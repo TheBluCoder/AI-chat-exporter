@@ -240,7 +240,8 @@ function escapeHtml(text) {
  * @param {Object} result - Scraping result object
  * @returns {Promise<string>} Markdown formatted string
  */
-async function convertToMarkdown(result) {
+async function convertToMarkdown(result, options = {}) {
+  const embedRemoteMedia = Boolean(options.embedRemoteMedia);
   const normalizeInlineMarkdownImages = (text) => {
     if (!text) return '';
 
@@ -331,10 +332,10 @@ async function convertToMarkdown(result) {
           let mediaUrl = m.url || m.src;
           const base64Data = m.base64;
 
-          // Use base64 if available, otherwise try to convert
+          // Use base64 if already present, otherwise embed only when enabled
           if (base64Data) {
             mediaUrl = base64Data;
-          } else if (mediaUrl && (m.type === 'image' || !m.type)) {
+          } else if (embedRemoteMedia && mediaUrl && (m.type === 'image' || !m.type)) {
             const base64 = await urlToBase64(mediaUrl);
             if (base64) mediaUrl = base64;
           }
@@ -379,7 +380,8 @@ async function convertToMarkdown(result) {
  * @param {Object} result - Scraping result object
  * @returns {Promise<void>}
  */
-async function exportToPDF(result) {
+async function exportToPDF(result, options = {}) {
+  const embedRemoteMedia = Boolean(options.embedRemoteMedia);
   // Deep clone result to avoid modifying the original object
   const data = JSON.parse(JSON.stringify(result));
 
@@ -393,7 +395,7 @@ async function exportToPDF(result) {
           if (m.base64) continue;
 
           const url = m.url || m.src;
-          if (url && (m.type === 'image' || !m.type)) {
+          if (embedRemoteMedia && url && (m.type === 'image' || !m.type)) {
             try {
               const base64 = await urlToBase64(url);
               if (base64) {
