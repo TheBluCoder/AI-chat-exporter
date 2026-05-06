@@ -69,6 +69,8 @@ Works on Chrome, Edge, Brave, and other Chromium-based browsers.
    - **Download MD**: Save as Markdown (embedded media optional)
    - **Export PDF**: Print to PDF
 
+Full walkthrough (video + text): [How to Use Guide](docs/HOW_TO_USE.md)
+
 ### Known Issues
 
 Most previously reported issues are now fixed in v2.0.0.
