@@ -214,6 +214,8 @@ export class GeminiScraper extends BaseScraper {
     return this.extractTextFromElement(userQueryElement, {
       contentSelector: this.selectors.USER_QUERY_CONTENT || this.selectors.USER_BUBBLE,
       removeSelectors: [
+        '.screen-reader-user-query-label',
+        '.cdk-visually-hidden',
         this.selectors.FILE_PREVIEW,
         '[data-test-id="uploaded-file"]',
         '[data-test-id="uploaded-img"]',
