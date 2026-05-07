@@ -1,5 +1,9 @@
 # AI Chat Exporter
 
+> **NOTE:** Web Store `v2.0.0` is currently under Google review.  
+> We will post updates once it is published.  
+> If you do not want to wait, follow the local/manual setup instructions below.
+
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
