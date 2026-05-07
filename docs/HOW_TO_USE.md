@@ -2,7 +2,7 @@
 
 If you prefer video:
 
-- Watch tutorial: https://youtu.be/tUQnVepnIu4
+- Watch tutorial: [https://youtu.be/tUQnVepnIu4](https://youtu.be/1etNXLYsViU)
 
 ---
 
