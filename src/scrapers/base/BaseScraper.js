@@ -614,6 +614,23 @@ export class BaseScraper {
     if (!/^[a-z0-9#+._-]{1,20}$/i.test(normalized)) return '';
     return normalized;
   }
+
+  /**
+   * Determine safe code-fence width when content may already contain backticks.
+   * @param {string} content
+   * @returns {string}
+   */
+  getBacktickWrapper(content) {
+    const minBackticks = 3;
+    if (!content) return '`'.repeat(minBackticks);
+
+    const backtickMatches = content.match(/`+/g);
+    let maxBackticks = 0;
+    if (backtickMatches) {
+      maxBackticks = Math.max(...backtickMatches.map((m) => m.length));
+    }
+    return '`'.repeat(Math.max(minBackticks, maxBackticks + 1));
+  }
 }
 
 export default BaseScraper;

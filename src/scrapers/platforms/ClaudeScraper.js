@@ -11,8 +11,6 @@ import { extractMedia } from '../../utils-modules/media.js';
 import { PREVIEW_CLOSE_DELAY_MS } from '../base/constants.js';
 
 // Constants
-const MIN_BACKTICKS = 3;
-const BACKTICK_INCREMENT = 1;
 const PREVIEW_OPEN_DELAY_MS = 600;
 const PANEL_OPEN_DELAY_MS = 400;
 const PANEL_CLOSE_DELAY_MS = 300;
@@ -38,23 +36,6 @@ export class ClaudeScraper extends BaseScraper {
         }
 
         return container;
-    }
-
-    /**
-     * Determine the correct number of backticks to use for a code block
-     * Ensures nested code blocks (like in markdown artifacts) are properly wrapped
-     * @param {string} content - The code content to wrap
-     * @returns {string} String of backticks (e.g., "```" or "````")
-     */
-    getBacktickWrapper(content) {
-        if (!content) return '```';
-        const backtickMatches = content.match(/`+/g);
-        let maxBackticks = 0;
-        if (backtickMatches) {
-            maxBackticks = Math.max(...backtickMatches.map(m => m.length));
-        }
-        // Use at least 3, or max found + 1
-        return '`'.repeat(Math.max(MIN_BACKTICKS, maxBackticks + BACKTICK_INCREMENT));
     }
 
     /**

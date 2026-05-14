@@ -17,27 +17,10 @@ const EDITOR_WAIT_DELAY_MS = 600;       // Reduced from 1500ms
 const PANEL_CLOSE_DELAY_MS = 300;       // Reduced from 500ms
 const USER_FILE_PANEL_DELAY_MS = 800;   // Reduced from 2000ms
 const USER_FILE_CLOSE_DELAY_MS = 400;   // Reduced from 800ms
-const MIN_BACKTICKS = 3;
-const BACKTICK_INCREMENT = 1;
 
 export class GeminiScraper extends BaseScraper {
   constructor() {
     super(GEMINI_CONFIG);
-  }
-
-  /**
-   * Determine safe code-fence width for nested backticks in code content.
-   * @param {string} content
-   * @returns {string}
-   */
-  getBacktickWrapper(content) {
-    if (!content) return '```';
-    const backtickMatches = content.match(/`+/g);
-    let maxBackticks = 0;
-    if (backtickMatches) {
-      maxBackticks = Math.max(...backtickMatches.map(m => m.length));
-    }
-    return '`'.repeat(Math.max(MIN_BACKTICKS, maxBackticks + BACKTICK_INCREMENT));
   }
 
   /**
