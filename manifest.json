@@ -54,6 +54,7 @@
       "resources": [
         "src/scrapers/*.js",
         "src/scrapers/**/*.js",
+        "src/content/*.js",
         "src/utils-modules/*.js"
       ],
       "matches": [
