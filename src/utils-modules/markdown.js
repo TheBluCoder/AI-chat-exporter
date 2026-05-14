@@ -6,6 +6,48 @@
 import { escapeHtmlForMarkdown } from './html.js';
 import { urlToBase64 } from './media.js';
 
+function normalizeFenceLanguage(label) {
+  const raw = (label || '').trim().toLowerCase();
+  if (!raw) return '';
+  if (raw === 'c++' || raw === 'cpp') return 'cpp';
+  if (raw === 'c#' || raw === 'csharp') return 'csharp';
+  return raw.replace(/\s+/g, '');
+}
+
+function looksLikeCodeStart(line) {
+  const text = (line || '').trim();
+  if (!text) return false;
+  return /^(#include|import\s+\w+|from\s+\w+\s+import|const\s+\w+|let\s+\w+|var\s+\w+|function\s+\w+|class\s+\w+|void\s+\w+|int\s+\w+|bool\s+\w+|if\s*\(|for\s*\(|while\s*\(|public\s+class|package\s+\w+)/.test(text);
+}
+
+function autoFenceLanguagePrefixedCode(text) {
+  if (!text || text.includes('```')) return text;
+
+  const lines = text.split('\n');
+  if (lines.length < 2) return text;
+
+  // Support outputs like "... flicker-free.C++" followed by code
+  const firstLine = lines[0] || '';
+  const inlineLanguageMatch = firstLine.match(/(?:^|\s)(C\+\+|CPP|Python|JavaScript|TypeScript|Java|Go|Rust|C#)\s*$/i);
+  if (inlineLanguageMatch && looksLikeCodeStart(lines[1])) {
+    const language = normalizeFenceLanguage(inlineLanguageMatch[1]);
+    const trimmedFirstLine = firstLine.replace(/\s*(C\+\+|CPP|Python|JavaScript|TypeScript|Java|Go|Rust|C#)\s*$/i, '').trimEnd();
+    const prefix = trimmedFirstLine ? `${trimmedFirstLine}\n\n` : '';
+    const code = lines.slice(1).join('\n');
+    return `${prefix}\`\`\`${language}\n${code}\n\`\`\``;
+  }
+
+  // Support outputs where first line is just "C++"
+  const firstLabelMatch = firstLine.trim().match(/^(C\+\+|CPP|Python|JavaScript|TypeScript|Java|Go|Rust|C#)$/i);
+  if (firstLabelMatch && looksLikeCodeStart(lines[1])) {
+    const language = normalizeFenceLanguage(firstLabelMatch[1]);
+    const code = lines.slice(1).join('\n');
+    return `\`\`\`${language}\n${code}\n\`\`\``;
+  }
+
+  return text;
+}
+
 /**
  * Generate a safe filename from platform and timestamp
  * @param {Object} result - Scraping result
@@ -39,7 +81,7 @@ export async function convertToMarkdown(result, options = {}) {
       md += `${role}:\n\n`;
 
       // Handle both field name formats (content vs text)
-      const messageText = msg.content || msg.text || '';
+      const messageText = autoFenceLanguagePrefixedCode(msg.content || msg.text || '');
       // Escape HTML entities to prevent them from being rendered as HTML
       md += `${escapeHtmlForMarkdown(messageText)}\n\n`;
 
