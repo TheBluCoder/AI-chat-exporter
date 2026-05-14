@@ -11,6 +11,10 @@ import { CHATGPT_CONFIG } from '../config/chatgpt.config.js';
 const DEFAULT_SCROLL_INCREMENT = 0.8;
 const DEFAULT_TURN_INDEX = 0;
 const CONTENT_LOAD_DELAY_MS = 300;  // Reduced from 500ms
+const RECOVERY_SCROLL_INCREMENT = 0.4;
+const RECOVERY_LOAD_DELAY_MS = 450;
+const DOM_STABILITY_POLL_MS = 75;
+const DOM_STABILITY_MAX_POLLS = 6;
 const SCROLL_POSITION_TOLERANCE = 10;
 const LOG_TEXT_PREVIEW_LENGTH = 50;
 
@@ -27,74 +31,165 @@ export class ChatGPTScraper extends BaseScraper {
    */
   async extractAllMessages(container) {
     const scrollContainer = this.findScrollContainer(container);
-    const allMessages = new Map(); // Use Map to deduplicate by stable turn key
-    const scrollIncrement = scrollContainer.clientHeight * (this.scrollConfig.scrollIncrement || DEFAULT_SCROLL_INCREMENT);
-    let currentScroll = 0;
-    const maxScroll = scrollContainer.scrollHeight;
+    const allMessages = new Map();
+    const seenShellTurns = new Set();
 
-    // Progressive scroll down while extracting messages
-    while (currentScroll < maxScroll) {
-      // Extract currently visible messages
-      const visibleTurns = Array.from(scrollContainer.querySelectorAll(this.selectors.ARTICLE_TURN));
+    await this.captureVisibleTurns(scrollContainer, allMessages, seenShellTurns);
 
-      for (const turn of visibleTurns) {
-        const role = turn.getAttribute('data-turn');
-        const turnIndex = this.parseTurnIndex(turn);
-        const turnId = turn.getAttribute('data-turn-id');
-        const turnKey = this.createTurnKey(turn, role, turnIndex);
+    // Fast baseline pass
+    await this.sweepDownAndCapture(
+      scrollContainer,
+      allMessages,
+      seenShellTurns,
+      this.scrollConfig.scrollIncrement || DEFAULT_SCROLL_INCREMENT,
+      CONTENT_LOAD_DELAY_MS
+    );
 
-        if (allMessages.has(turnKey)) continue;
+    // Targeted recovery pass when we saw shell turns that never hydrated
+    const unresolvedBeforeRecovery = this.getUnresolvedTurnKeys(allMessages, seenShellTurns);
+    if (unresolvedBeforeRecovery.size > 0) {
+      scrollContainer.scrollTop = 0;
+      await this.waitForTurnSettle(scrollContainer, RECOVERY_LOAD_DELAY_MS);
 
-        try {
-          if (role === 'user') {
-            const userText = this.extractUserText(turn);
-            const userMedia = this.extractUserMedia(turn);
-
-            if (userText || userMedia) {
-              allMessages.set(turnKey, this.createMessage({
-                role: 'user',
-                content: userText,
-                media: userMedia,
-                turn_index: turnIndex,
-                turn_id: turnId || turnKey,
-              }));
-            }
-          } else if (role === 'assistant') {
-            const modelText = this.extractModelText(turn);
-            const modelMedia = this.extractModelMedia(turn);
-
-            if (modelText || modelMedia) {
-              allMessages.set(turnKey, this.createMessage({
-                role: 'model',
-                content: modelText,
-                media: modelMedia,
-                turn_index: turnIndex,
-                turn_id: turnId || turnKey,
-              }));
-            }
-          }
-        } catch (err) {
-          console.warn(`[${this.platform}-Scraper] Error extracting turn ${turnKey}:`, err);
-        }
-      }
-
-      // Scroll down
-      currentScroll += scrollIncrement;
-      scrollContainer.scrollTop = currentScroll;
-
-      // Wait for new content to load
-      await this.sleep(CONTENT_LOAD_DELAY_MS);
-
-      // Check if we've actually scrolled (might be at bottom)
-      if (scrollContainer.scrollTop < currentScroll - SCROLL_POSITION_TOLERANCE) {
-        break;
-      }
+      await this.sweepDownAndCapture(
+        scrollContainer,
+        allMessages,
+        seenShellTurns,
+        RECOVERY_SCROLL_INCREMENT,
+        RECOVERY_LOAD_DELAY_MS,
+        unresolvedBeforeRecovery
+      );
     }
 
-    // Convert to array and sort by turn_index
-    const messages = Array.from(allMessages.values()).sort((a, b) => a.turn_index - b.turn_index);
+    return Array.from(allMessages.values()).sort((a, b) => a.turn_index - b.turn_index);
+  }
 
-    return messages;
+  /**
+   * Prefer ChatGPT's explicit scroll root when available
+   * @param {Element} startElement
+   * @returns {Element}
+   */
+  findScrollContainer(startElement) {
+    const explicitRoot = document.querySelector('[data-scroll-root]');
+    if (explicitRoot) return explicitRoot;
+    return super.findScrollContainer(startElement);
+  }
+
+  /**
+   * Scroll from current position to bottom while capturing hydrated turns.
+   * @param {Element} scrollContainer
+   * @param {Map} allMessages
+   * @param {Set} seenShellTurns
+   * @param {number} incrementRatio
+   * @param {number} waitMs
+   * @param {Set<string>|null} targetTurnKeys
+   */
+  async sweepDownAndCapture(scrollContainer, allMessages, seenShellTurns, incrementRatio, waitMs, targetTurnKeys = null) {
+    const increment = Math.max(1, Math.floor(scrollContainer.clientHeight * incrementRatio));
+    let currentScroll = scrollContainer.scrollTop;
+
+    while (currentScroll < scrollContainer.scrollHeight) {
+      await this.captureVisibleTurns(scrollContainer, allMessages, seenShellTurns, targetTurnKeys);
+
+      const nextScroll = Math.min(currentScroll + increment, scrollContainer.scrollHeight);
+      scrollContainer.scrollTop = nextScroll;
+      await this.waitForTurnSettle(scrollContainer, waitMs);
+
+      if (scrollContainer.scrollTop < nextScroll - SCROLL_POSITION_TOLERANCE) {
+        break;
+      }
+
+      if (targetTurnKeys && this.getUnresolvedTurnKeys(allMessages, seenShellTurns, targetTurnKeys).size === 0) {
+        break;
+      }
+
+      currentScroll = scrollContainer.scrollTop;
+    }
+
+    await this.captureVisibleTurns(scrollContainer, allMessages, seenShellTurns, targetTurnKeys);
+  }
+
+  /**
+   * Capture visible turns. Shell turns are tracked separately until hydrated.
+   * @param {Element} scrollContainer
+   * @param {Map} allMessages
+   * @param {Set} seenShellTurns
+   * @param {Set<string>|null} targetTurnKeys
+   */
+  async captureVisibleTurns(scrollContainer, allMessages, seenShellTurns, targetTurnKeys = null) {
+    const visibleTurns = Array.from(scrollContainer.querySelectorAll(this.selectors.ARTICLE_TURN));
+
+    for (const turn of visibleTurns) {
+      const role = turn.getAttribute('data-turn');
+      const turnIndex = this.parseTurnIndex(turn);
+      const turnId = turn.getAttribute('data-turn-id');
+      const turnKey = this.createTurnKey(turn, role, turnIndex);
+
+      if (targetTurnKeys && !targetTurnKeys.has(turnKey)) continue;
+      if (allMessages.has(turnKey)) continue;
+
+      seenShellTurns.add(turnKey);
+
+      try {
+        if (role === 'user') {
+          const userText = this.extractUserText(turn);
+          const userMedia = this.extractUserMedia(turn);
+          if (!this.hasHydratedContent(userText, userMedia)) continue;
+
+          allMessages.set(turnKey, this.createMessage({
+            role: 'user',
+            content: userText,
+            media: userMedia,
+            turn_index: turnIndex,
+            turn_id: turnId || turnKey,
+          }));
+        } else if (role === 'assistant') {
+          const modelText = this.extractModelText(turn);
+          const modelMedia = this.extractModelMedia(turn);
+          if (!this.hasHydratedContent(modelText, modelMedia)) continue;
+
+          allMessages.set(turnKey, this.createMessage({
+            role: 'model',
+            content: modelText,
+            media: modelMedia,
+            turn_index: turnIndex,
+            turn_id: turnId || turnKey,
+          }));
+        }
+      } catch (err) {
+        console.warn(`[${this.platform}-Scraper] Error extracting turn ${turnKey}:`, err);
+      }
+    }
+  }
+
+  hasHydratedContent(text, media) {
+    return Boolean((text && text.trim()) || (media && media.length > 0));
+  }
+
+  getTurnRenderFingerprint(scrollContainer) {
+    const nodes = scrollContainer.querySelectorAll(this.selectors.ARTICLE_TURN);
+    return Array.from(nodes)
+      .map((node) => node.getAttribute('data-turn-id') || node.getAttribute('data-testid') || '')
+      .filter(Boolean)
+      .join('|');
+  }
+
+  async waitForTurnSettle(scrollContainer, fallbackDelayMs) {
+    const baseline = this.getTurnRenderFingerprint(scrollContainer);
+    for (let i = 0; i < DOM_STABILITY_MAX_POLLS; i++) {
+      await this.sleep(DOM_STABILITY_POLL_MS);
+      if (this.getTurnRenderFingerprint(scrollContainer) !== baseline) return;
+    }
+    await this.sleep(fallbackDelayMs);
+  }
+
+  getUnresolvedTurnKeys(allMessages, seenShellTurns, subset = null) {
+    const unresolved = new Set();
+    for (const key of seenShellTurns) {
+      if (subset && !subset.has(key)) continue;
+      if (!allMessages.has(key)) unresolved.add(key);
+    }
+    return unresolved;
   }
 
   /**
