@@ -6,6 +6,10 @@
 
 import { BaseScraper } from '../base/BaseScraper.js';
 import { CHATGPT_CONFIG } from '../config/chatgpt.config.js';
+import {
+  LOG_TEXT_PREVIEW_LENGTH,
+  SCROLL_POSITION_TOLERANCE,
+} from '../base/constants.js';
 
 // Constants
 const DEFAULT_SCROLL_INCREMENT = 0.8;
@@ -13,9 +17,6 @@ const DEFAULT_TURN_INDEX = 0;
 const CONTENT_LOAD_DELAY_MS = 300;  // Reduced from 500ms
 const RECOVERY_SCROLL_INCREMENT = 0.4;
 const RECOVERY_LOAD_DELAY_MS = 450;
-const DOM_STABILITY_POLL_MS = 75;
-const SCROLL_POSITION_TOLERANCE = 10;
-const LOG_TEXT_PREVIEW_LENGTH = 50;
 
 export class ChatGPTScraper extends BaseScraper {
   constructor() {
@@ -159,38 +160,6 @@ export class ChatGPTScraper extends BaseScraper {
         console.warn(`[${this.platform}-Scraper] Error extracting turn ${turnKey}:`, err);
       }
     }
-  }
-
-  hasHydratedContent(text, media) {
-    return Boolean((text && text.trim()) || (media && media.length > 0));
-  }
-
-  getTurnRenderFingerprint(scrollContainer) {
-    const nodes = scrollContainer.querySelectorAll(this.selectors.ARTICLE_TURN);
-    return Array.from(nodes)
-      .map((node) => node.getAttribute('data-turn-id') || node.getAttribute('data-testid') || '')
-      .filter(Boolean)
-      .join('|');
-  }
-
-  async waitForTurnSettle(scrollContainer, fallbackDelayMs) {
-    const baseline = this.getTurnRenderFingerprint(scrollContainer);
-    const maxWaitMs = Math.max(fallbackDelayMs, DOM_STABILITY_POLL_MS);
-    const start = Date.now();
-
-    while (Date.now() - start < maxWaitMs) {
-      await this.sleep(DOM_STABILITY_POLL_MS);
-      if (this.getTurnRenderFingerprint(scrollContainer) !== baseline) return;
-    }
-  }
-
-  getUnresolvedTurnKeys(allMessages, seenShellTurns, subset = null) {
-    const unresolved = new Set();
-    for (const key of seenShellTurns) {
-      if (subset && !subset.has(key)) continue;
-      if (!allMessages.has(key)) unresolved.add(key);
-    }
-    return unresolved;
   }
 
   /**
