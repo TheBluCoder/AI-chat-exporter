@@ -14,9 +14,9 @@ import {
 // Constants
 const DEFAULT_SCROLL_INCREMENT = 0.8;
 const DEFAULT_TURN_INDEX = 0;
-const CONTENT_LOAD_DELAY_MS = 300;  // Reduced from 500ms
+const CONTENT_LOAD_DELAY_MS = 240;  // Conservative speed-up with settle checks
 const RECOVERY_SCROLL_INCREMENT = 0.4;
-const RECOVERY_LOAD_DELAY_MS = 450;
+const RECOVERY_LOAD_DELAY_MS = 350;
 
 export class ChatGPTScraper extends BaseScraper {
   constructor() {
