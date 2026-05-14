@@ -587,6 +587,33 @@ export class BaseScraper {
 
     return message;
   }
+
+  /**
+   * Normalize code language labels to markdown-friendly identifiers.
+   * Uses platform config aliases when provided.
+   * @param {string} label
+   * @returns {string}
+   */
+  normalizeCodeLanguage(label) {
+    const raw = (label || '').trim().toLowerCase();
+    if (!raw) return '';
+
+    const defaultAliases = {
+      'c++': 'cpp',
+      'cpp': 'cpp',
+      'c#': 'csharp',
+      'csharp': 'csharp',
+      'javascript': 'js',
+      'typescript': 'ts',
+    };
+
+    const configuredAliases = this.config?.codeLanguageAliases || {};
+    const aliases = { ...defaultAliases, ...configuredAliases };
+    const normalized = aliases[raw] || raw.replace(/\s+/g, '');
+
+    if (!/^[a-z0-9#+._-]{1,20}$/i.test(normalized)) return '';
+    return normalized;
+  }
 }
 
 export default BaseScraper;

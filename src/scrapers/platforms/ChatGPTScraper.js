@@ -245,16 +245,18 @@ export class ChatGPTScraper extends BaseScraper {
       if (!codeEl) return; // Not a standard code block
       const codeContent = codeEl.innerText;
 
-      // 2. Extract the language (header)
+      // 2. Extract language (prefer explicit header label from ChatGPT UI)
+      const headerLabel = pre.querySelector('.text-token-text-primary')?.innerText?.trim() || '';
+
+      // 3. Fallback language extraction from wrapper text
       const preClone = pre.cloneNode(true);
       if (preClone.querySelector('code')) preClone.querySelector('code').remove();
       preClone.querySelectorAll('button').forEach(b => b.remove());
 
-      // The remaining text should be the language (e.g., "kotlin", "javascript")
-      const apiLang = preClone.innerText.trim();
-      const language = apiLang || '';
+      const fallbackLabel = preClone.innerText.trim().split('\n')[0] || '';
+      const language = this.normalizeCodeLanguage(headerLabel || fallbackLabel);
 
-      // 3. Replace the entire pre element with a markdown code block representation
+      // 4. Replace the entire pre element with a markdown code block representation
       const markdownBlock = `\n\`\`\`${language}\n${codeContent}\n\`\`\`\n`;
 
       // Create a text node to replace the pre element

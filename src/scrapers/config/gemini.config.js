@@ -45,6 +45,15 @@ export const GEMINI_CONFIG = {
     stabilityDelay: 500,
     stabilityTimeout: 8000,
   },
+
+  codeLanguageAliases: {
+    'c++': 'cpp',
+    cpp: 'cpp',
+    'c#': 'csharp',
+    csharp: 'csharp',
+    javascript: 'js',
+    typescript: 'ts',
+  },
 };
 
 export default GEMINI_CONFIG;
