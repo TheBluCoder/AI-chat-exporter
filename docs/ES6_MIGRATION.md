@@ -4,6 +4,8 @@
 
 The AI Chat Exporter has been migrated from IIFE-based scrapers to a modern ES6 modules architecture. This migration brings significant improvements in code maintainability, extensibility, and eliminates function name collisions.
 
+Note: Some line-count comparisons and snippets in this document are historical migration snapshots and may not match the latest refactors in `main`/current release.
+
 ## Architecture
 
 ### Template Method Pattern
