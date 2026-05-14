@@ -91,6 +91,14 @@ function sendMessageToTab(tabId, payload) {
   });
 }
 
+function getExportTimeoutMs(url, isSelected = false) {
+  const isChatGPT = PLATFORM_URL_PATTERNS.CHATGPT.test(url || "");
+  if (isChatGPT) {
+    return isSelected ? 120000 : 90000;
+  }
+  return 30000;
+}
+
 function executeScriptInTab(tabId, files) {
   return new Promise((resolve, reject) => {
     try {
@@ -426,7 +434,7 @@ async function handleExport() {
       // ignore; export request below is authoritative
     }
 
-    const timeoutMs = 30000;
+    const timeoutMs = getExportTimeoutMs(tab.url, false);
     const response = await Promise.race([
       sendMessageWithRecovery(tab.id, { action: "SCRAPE_PAGE" }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for page content script response.")), timeoutMs))
@@ -472,7 +480,7 @@ async function handleExportSelected() {
     const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
     if (!tab) throw new Error("No active tab found");
 
-    const timeoutMs = 30000;
+    const timeoutMs = getExportTimeoutMs(tab.url, true);
     const response = await Promise.race([
       sendMessageWithRecovery(tab.id, { action: "EXPORT_SELECTED" }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for selected export response.")), timeoutMs))
