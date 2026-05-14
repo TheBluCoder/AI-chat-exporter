@@ -65,15 +65,13 @@ export class ClaudeScraper extends BaseScraper {
 
             // Extract language from class if present
             const codeClass = codeEl.getAttribute('class') || '';
-            const languageMatch = codeClass.match(/language-(\w+)/);
-            const language = languageMatch ? languageMatch[1] : '';
+            const language = this.extractCodeLanguageFromClass(codeClass);
 
             // Get code content
             const codeContent = codeEl.innerText || codeEl.textContent;
 
             // Create markdown code block with appropriate backticks
-            const ticks = this.getBacktickWrapper(codeContent);
-            const markdownBlock = `\n${ticks}${language}\n${codeContent}\n${ticks}\n`;
+            const markdownBlock = this.createMarkdownCodeBlock(codeContent, language);
 
             // Replace the code block element with markdown text
             codeBlock.replaceWith(document.createTextNode(markdownBlock));
@@ -337,15 +335,13 @@ export class ClaudeScraper extends BaseScraper {
 
             // Extract language from class (e.g., "language-python" -> "python")
             const codeClass = codeEl.getAttribute('class') || '';
-            const languageMatch = codeClass.match(/language-(\w+)/);
-            const language = languageMatch ? languageMatch[1] : '';
+            const language = this.extractCodeLanguageFromClass(codeClass);
 
             // Get code content
             const codeContent = codeEl.innerText || codeEl.textContent;
 
             // Create markdown code block with appropriate backticks
-            const ticks = this.getBacktickWrapper(codeContent);
-            const markdownBlock = `\n${ticks}${language}\n${codeContent}\n${ticks}\n`;
+            const markdownBlock = this.createMarkdownCodeBlock(codeContent, language);
 
             // Replace the code block element with markdown text
             codeBlock.replaceWith(document.createTextNode(markdownBlock));
@@ -404,15 +400,18 @@ export class ClaudeScraper extends BaseScraper {
 
                     // Extract language
                     const codeClass = codeEl.getAttribute('class') || '';
-                    const languageMatch = codeClass.match(/language-(\w+)/);
-                    const language = languageMatch ? languageMatch[1] : '';
+                    const language = this.extractCodeLanguageFromClass(codeClass);
 
                     // Get code content
                     const codeContent = codeClone.innerText || codeClone.textContent;
 
                     // Format as markdown with title comment, using safe backticks
-                    const ticks = this.getBacktickWrapper(codeContent);
-                    const markdownBlock = `${ticks}${language}\n# ${title}\n${codeContent}\n${ticks}`;
+                    const markdownBlock = this.createMarkdownCodeBlock(
+                        `# ${title}\n${codeContent}`,
+                        language,
+                        '',
+                        ''
+                    );
 
                     // Close panel
                     const closeBtn = document.querySelector(this.selectors.ARTIFACT_CLOSE_BUTTON);

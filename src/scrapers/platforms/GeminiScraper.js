@@ -249,10 +249,8 @@ export class GeminiScraper extends BaseScraper {
       }
 
       const classNames = ((codeEl?.getAttribute('class')) || pre.getAttribute('class') || '');
-      const langMatch = classNames.match(/language-([\w+-]+)/i);
-      const language = langMatch ? langMatch[1] : '';
-      const ticks = this.getBacktickWrapper(codeContent);
-      const fenced = `\n${ticks}${language}\n${codeContent}\n${ticks}\n`;
+      const language = this.extractCodeLanguageFromClass(classNames);
+      const fenced = this.createMarkdownCodeBlock(codeContent, language);
       pre.replaceWith(document.createTextNode(fenced));
     });
 

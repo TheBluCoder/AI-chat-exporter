@@ -631,6 +631,30 @@ export class BaseScraper {
     }
     return '`'.repeat(Math.max(minBackticks, maxBackticks + 1));
   }
+
+  /**
+   * Extract a normalized language identifier from a class attribute string.
+   * @param {string} classNames
+   * @returns {string}
+   */
+  extractCodeLanguageFromClass(classNames) {
+    const match = String(classNames || '').match(/language-([\w+-]+)/i);
+    return this.normalizeCodeLanguage(match ? match[1] : '');
+  }
+
+  /**
+   * Create a fenced markdown code block with safe backtick width.
+   * @param {string} codeContent
+   * @param {string} language
+   * @param {string} prefix
+   * @returns {string}
+   */
+  createMarkdownCodeBlock(codeContent, language = '', prefix = '\n', suffix = '\n') {
+    const content = (codeContent || '').trimEnd();
+    const ticks = this.getBacktickWrapper(content);
+    const lang = this.normalizeCodeLanguage(language);
+    return `${prefix}${ticks}${lang}\n${content}\n${ticks}${suffix}`;
+  }
 }
 
 export default BaseScraper;

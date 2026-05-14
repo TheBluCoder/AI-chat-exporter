@@ -257,7 +257,7 @@ export class ChatGPTScraper extends BaseScraper {
       const language = this.normalizeCodeLanguage(headerLabel || fallbackLabel);
 
       // 4. Replace the entire pre element with a markdown code block representation
-      const markdownBlock = `\n\`\`\`${language}\n${codeContent}\n\`\`\`\n`;
+      const markdownBlock = this.createMarkdownCodeBlock(codeContent, language);
 
       // Create a text node to replace the pre element
       pre.replaceWith(document.createTextNode(markdownBlock));
