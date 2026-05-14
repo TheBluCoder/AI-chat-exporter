@@ -47,16 +47,10 @@ export class ClaudeScraper extends BaseScraper {
     extractUserText(userQuery) {
         if (!userQuery) return '';
 
-        // Clone to avoid modifying DOM
-        const clone = userQuery.cloneNode(true);
-
-        // Remove action buttons (Show more/less, etc.)
-        clone.querySelectorAll('button').forEach(b => b.remove());
-
-        // Remove line numbers
-        if (this.selectors.LINE_NUMBERS) {
-            clone.querySelectorAll(this.selectors.LINE_NUMBERS).forEach(el => el.remove());
-        }
+        const removeSelectors = ['button'];
+        if (this.selectors.LINE_NUMBERS) removeSelectors.push(this.selectors.LINE_NUMBERS);
+        const clone = this.cloneAndStripSelectors(userQuery, removeSelectors);
+        if (!clone) return '';
 
         // Process code blocks - convert to markdown format
         clone.querySelectorAll('.code-block__code').forEach(codeBlock => {

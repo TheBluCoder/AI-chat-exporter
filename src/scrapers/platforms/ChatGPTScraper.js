@@ -208,10 +208,9 @@ export class ChatGPTScraper extends BaseScraper {
     if (!contentContainer) return '';
 
     const targetElement = contentContainer.querySelector(this.selectors.USER_TEXT) || contentContainer;
-    const clone = targetElement.cloneNode(true);
+    const clone = this.cloneAndStripSelectors(targetElement, ['button']);
 
     this.replaceInlineImagesWithMarkdown(clone, this.selectors.UPLOADED_IMG);
-    clone.querySelectorAll('button').forEach(el => el.remove());
 
     return clone.innerText.trim();
   }
@@ -232,7 +231,7 @@ export class ChatGPTScraper extends BaseScraper {
     const targetElement = contentContainer.querySelector(this.selectors.MODEL_TEXT) || contentContainer;
 
     // Clone to avoid modifying the actual DOM
-    const clone = targetElement.cloneNode(true);
+    const clone = this.cloneAndStripSelectors(targetElement, ['button']);
 
     // Preserve image position relative to surrounding text
     this.replaceInlineImagesWithMarkdown(clone, this.selectors.GENERATED_IMG);
@@ -262,9 +261,6 @@ export class ChatGPTScraper extends BaseScraper {
       // Create a text node to replace the pre element
       pre.replaceWith(document.createTextNode(markdownBlock));
     });
-
-    // Remove any remaining buttons
-    clone.querySelectorAll('button').forEach(el => el.remove());
 
     // Get the final text
     const text = clone.innerText.trim();

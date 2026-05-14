@@ -234,10 +234,12 @@ export class GeminiScraper extends BaseScraper {
     if (!modelResponseElement) return '';
 
     const contentRoot = modelResponseElement.querySelector(this.selectors.MESSAGE_CONTENT) || modelResponseElement;
-    const clone = contentRoot.cloneNode(true);
-
-    // Remove UI controls that should not be exported as message text.
-    clone.querySelectorAll('button, [role="button"][aria-label], .cdk-visually-hidden').forEach((el) => el.remove());
+    const clone = this.cloneAndStripSelectors(contentRoot, [
+      'button',
+      '[role="button"][aria-label]',
+      '.cdk-visually-hidden'
+    ]);
+    if (!clone) return '';
 
     // Convert rendered code blocks to markdown fences before extracting text.
     clone.querySelectorAll('pre').forEach((pre) => {

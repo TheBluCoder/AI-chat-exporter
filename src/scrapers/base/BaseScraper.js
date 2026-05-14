@@ -655,6 +655,33 @@ export class BaseScraper {
     const lang = this.normalizeCodeLanguage(language);
     return `${prefix}${ticks}${lang}\n${content}\n${ticks}${suffix}`;
   }
+
+  /**
+   * Clone an element and remove a list of selectors from the clone.
+   * @param {Element} element
+   * @param {string[]} selectors
+   * @returns {Element|null}
+   */
+  cloneAndStripSelectors(element, selectors = []) {
+    if (!element) return null;
+    const clone = element.cloneNode(true);
+    selectors.forEach((selector) => {
+      if (!selector) return;
+      clone.querySelectorAll(selector).forEach((node) => node.remove());
+    });
+    return clone;
+  }
+
+  /**
+   * Extract trimmed innerText from an element, optionally stripping selectors first.
+   * @param {Element} element
+   * @param {string[]} selectors
+   * @returns {string}
+   */
+  extractCleanInnerText(element, selectors = []) {
+    const clone = this.cloneAndStripSelectors(element, selectors);
+    return clone ? clone.innerText.trim() : '';
+  }
 }
 
 export default BaseScraper;
