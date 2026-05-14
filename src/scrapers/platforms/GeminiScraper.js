@@ -17,10 +17,27 @@ const EDITOR_WAIT_DELAY_MS = 600;       // Reduced from 1500ms
 const PANEL_CLOSE_DELAY_MS = 300;       // Reduced from 500ms
 const USER_FILE_PANEL_DELAY_MS = 800;   // Reduced from 2000ms
 const USER_FILE_CLOSE_DELAY_MS = 400;   // Reduced from 800ms
+const MIN_BACKTICKS = 3;
+const BACKTICK_INCREMENT = 1;
 
 export class GeminiScraper extends BaseScraper {
   constructor() {
     super(GEMINI_CONFIG);
+  }
+
+  /**
+   * Determine safe code-fence width for nested backticks in code content.
+   * @param {string} content
+   * @returns {string}
+   */
+  getBacktickWrapper(content) {
+    if (!content) return '```';
+    const backtickMatches = content.match(/`+/g);
+    let maxBackticks = 0;
+    if (backtickMatches) {
+      maxBackticks = Math.max(...backtickMatches.map(m => m.length));
+    }
+    return '`'.repeat(Math.max(MIN_BACKTICKS, maxBackticks + BACKTICK_INCREMENT));
   }
 
   /**
@@ -222,6 +239,51 @@ export class GeminiScraper extends BaseScraper {
         'button'
       ],
     });
+  }
+
+  /**
+   * Extract model text while preserving code blocks as fenced markdown.
+   * Gemini often renders code visually, so plain innerText can flatten it.
+   * @param {Element} modelResponseElement
+   * @returns {string}
+   */
+  extractModelText(modelResponseElement) {
+    if (!modelResponseElement) return '';
+
+    const contentRoot = modelResponseElement.querySelector(this.selectors.MESSAGE_CONTENT) || modelResponseElement;
+    const clone = contentRoot.cloneNode(true);
+
+    // Remove UI controls that should not be exported as message text.
+    clone.querySelectorAll('button, [role="button"][aria-label], .cdk-visually-hidden').forEach((el) => el.remove());
+
+    // Convert rendered code blocks to markdown fences before extracting text.
+    clone.querySelectorAll('pre').forEach((pre) => {
+      const codeEl = pre.querySelector('code');
+      const codeContent = (codeEl ? codeEl.innerText : pre.innerText || '').trimEnd();
+      if (!codeContent) {
+        pre.remove();
+        return;
+      }
+
+      const classNames = ((codeEl?.getAttribute('class')) || pre.getAttribute('class') || '');
+      const langMatch = classNames.match(/language-([\w+-]+)/i);
+      const language = langMatch ? langMatch[1] : '';
+      const ticks = this.getBacktickWrapper(codeContent);
+      const fenced = `\n${ticks}${language}\n${codeContent}\n${ticks}\n`;
+      pre.replaceWith(document.createTextNode(fenced));
+    });
+
+    // Fallback: inline code blocks that may not be nested in <pre>.
+    clone.querySelectorAll('code').forEach((code) => {
+      const text = (code.innerText || code.textContent || '').trim();
+      if (!text) {
+        code.remove();
+        return;
+      }
+      code.replaceWith(document.createTextNode(`\`${text}\``));
+    });
+
+    return clone.innerText.trim();
   }
 
   /**
