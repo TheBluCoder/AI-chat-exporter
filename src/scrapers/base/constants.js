@@ -16,12 +16,16 @@ export const ELEMENT_POLL_INTERVAL_MS = 100;
 
 // Scroll Verification
 export const SCROLL_WIGGLE_DELAY_MS = 150;
+export const SCROLL_POSITION_TOLERANCE = 10;
 
 // Platform-Specific Delays
 export const PREVIEW_CLOSE_DELAY_MS = 200;
 
 // Logging Configuration
 export const LOG_TEXT_PREVIEW_LENGTH = 50;
+
+// DOM stability probing (used by virtualization-aware scrapers)
+export const DOM_STABILITY_POLL_MS = 75;
 
 // Platform URL Patterns
 export const PLATFORM_URL_PATTERNS = {

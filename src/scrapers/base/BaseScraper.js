@@ -21,7 +21,8 @@ import {
   STABILITY_TIMEOUT_MS,
   DEFAULT_ELEMENT_WAIT_TIMEOUT_MS,
   ELEMENT_POLL_INTERVAL_MS,
-  SCROLL_WIGGLE_DELAY_MS
+  SCROLL_WIGGLE_DELAY_MS,
+  DOM_STABILITY_POLL_MS,
 } from './constants.js';
 
 export class BaseScraper {
@@ -308,6 +309,64 @@ export class BaseScraper {
    */
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * True when turn has hydrated content we can export.
+   * @param {string} text
+   * @param {Array|null} media
+   * @returns {boolean}
+   */
+  hasHydratedContent(text, media) {
+    return Boolean((text && text.trim()) || (media && media.length > 0));
+  }
+
+  /**
+   * Build a lightweight fingerprint of currently mounted turns.
+   * Useful for virtualization-aware settling.
+   * @param {Element} container
+   * @returns {string}
+   */
+  getTurnRenderFingerprint(container) {
+    if (!container || !this.selectors?.ARTICLE_TURN) return '';
+    const nodes = container.querySelectorAll(this.selectors.ARTICLE_TURN);
+    return Array.from(nodes)
+      .map((node) => node.getAttribute('data-turn-id') || node.getAttribute('data-testid') || '')
+      .filter(Boolean)
+      .join('|');
+  }
+
+  /**
+   * Wait until rendered turn fingerprint changes, or until max wait elapses.
+   * @param {Element} container
+   * @param {number} maxWaitMs
+   * @returns {Promise<void>}
+   */
+  async waitForTurnSettle(container, maxWaitMs) {
+    const baseline = this.getTurnRenderFingerprint(container);
+    const boundedWaitMs = Math.max(maxWaitMs, DOM_STABILITY_POLL_MS);
+    const start = Date.now();
+
+    while (Date.now() - start < boundedWaitMs) {
+      await this.sleep(DOM_STABILITY_POLL_MS);
+      if (this.getTurnRenderFingerprint(container) !== baseline) return;
+    }
+  }
+
+  /**
+   * Compute unresolved keys that were seen but not yet captured.
+   * @param {Map<string, unknown>} capturedMap
+   * @param {Set<string>} seenSet
+   * @param {Set<string>|null} subset
+   * @returns {Set<string>}
+   */
+  getUnresolvedTurnKeys(capturedMap, seenSet, subset = null) {
+    const unresolved = new Set();
+    for (const key of seenSet) {
+      if (subset && !subset.has(key)) continue;
+      if (!capturedMap.has(key)) unresolved.add(key);
+    }
+    return unresolved;
   }
 
   /**

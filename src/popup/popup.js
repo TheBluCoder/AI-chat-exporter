@@ -47,6 +47,7 @@ let lastResult = null;
 let scrapeStartTime = 0;
 let currentSettings = { ...DEFAULT_SETTINGS };
 const BROAD_MEDIA_PERMISSION = { origins: ['<all_urls>'] };
+let activeExportSession = null;
 
 function setPageDiagnostic(message, kind = "warn") {
   if (!pageDiagnostic) return;
@@ -89,6 +90,25 @@ function sendMessageToTab(tabId, payload) {
       resolve(response);
     });
   });
+}
+
+function beginExportSession(tabId, action) {
+  activeExportSession = {
+    tabId,
+    action,
+  };
+}
+
+function endExportSession() {
+  activeExportSession = null;
+}
+
+function getExportTimeoutMs(url, isSelected = false) {
+  const isChatGPT = PLATFORM_URL_PATTERNS.CHATGPT.test(url || "");
+  if (isChatGPT) {
+    return isSelected ? 120000 : 90000;
+  }
+  return 30000;
 }
 
 function executeScriptInTab(tabId, files) {
@@ -408,6 +428,7 @@ async function handleExport() {
     if (!tab) {
       throw new Error("No active tab found");
     }
+    beginExportSession(tab.id, "SCRAPE_PAGE");
 
     // Check if we can access the tab (browser internal pages)
     if (tab.url.startsWith("chrome://") ||
@@ -426,7 +447,7 @@ async function handleExport() {
       // ignore; export request below is authoritative
     }
 
-    const timeoutMs = 30000;
+    const timeoutMs = getExportTimeoutMs(tab.url, false);
     const response = await Promise.race([
       sendMessageWithRecovery(tab.id, { action: "SCRAPE_PAGE" }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for page content script response.")), timeoutMs))
@@ -460,6 +481,8 @@ async function handleExport() {
     showError(err.message);
     setPageDiagnostic(`Export error: ${err.message}`, "error");
     console.error("Export error:", err);
+  } finally {
+    endExportSession();
   }
 }
 
@@ -471,8 +494,9 @@ async function handleExportSelected() {
   try {
     const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
     if (!tab) throw new Error("No active tab found");
+    beginExportSession(tab.id, "EXPORT_SELECTED");
 
-    const timeoutMs = 30000;
+    const timeoutMs = getExportTimeoutMs(tab.url, true);
     const response = await Promise.race([
       sendMessageWithRecovery(tab.id, { action: "EXPORT_SELECTED" }),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for selected export response.")), timeoutMs))
@@ -506,8 +530,23 @@ async function handleExportSelected() {
   } catch (err) {
     showError(err.message);
     setPageDiagnostic(`Selected export error: ${err.message}`, "error");
+  } finally {
+    endExportSession();
   }
 }
+
+browserAPI.runtime.onMessage.addListener((message, sender) => {
+  if (!message || message.type !== "EXPORT_HEARTBEAT") return;
+  if (!activeExportSession) return;
+
+  const senderTabId = sender?.tab?.id;
+  if (senderTabId && senderTabId !== activeExportSession.tabId) return;
+  if (message.action && message.action !== activeExportSession.action) return;
+
+  const seconds = Math.max(1, Math.round((message.elapsedMs || 0) / MS_TO_SECONDS));
+  statusSubtitle.textContent = `Still working... ${seconds}s elapsed.`;
+  setPageDiagnostic(`Still exporting from page... ${seconds}s elapsed.`, "warn");
+});
 
 /**
  * Handle copy button click
