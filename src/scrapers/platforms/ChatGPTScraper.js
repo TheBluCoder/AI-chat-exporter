@@ -242,7 +242,7 @@ export class ChatGPTScraper extends BaseScraper {
       // 1. Extract the code content
       const codeEl = pre.querySelector('code');
       if (!codeEl) return; // Not a standard code block
-      const codeContent = codeEl.innerText;
+      const codeContent = this.extractCodeTextPreserveLines(codeEl);
 
       // 2. Extract language (prefer explicit header label from ChatGPT UI)
       const headerLabel = pre.querySelector('.text-token-text-primary')?.innerText?.trim() || '';

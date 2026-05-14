@@ -657,6 +657,29 @@ export class BaseScraper {
   }
 
   /**
+   * Extract code text while preserving logical line breaks across different renderers.
+   * Handles DOMs that rely on <br> and CodeMirror-like line wrappers.
+   * @param {Element} codeElement
+   * @returns {string}
+   */
+  extractCodeTextPreserveLines(codeElement) {
+    if (!codeElement) return '';
+
+    const direct = (codeElement.innerText || '').replace(/\r\n/g, '\n');
+    if (direct.includes('\n')) return direct;
+
+    const cmLines = codeElement.querySelectorAll('.cm-line');
+    if (cmLines.length > 0) {
+      const joined = Array.from(cmLines).map((line) => (line.innerText || '').replace(/\r\n/g, '\n')).join('\n');
+      if (joined.trim()) return joined;
+    }
+
+    const clone = codeElement.cloneNode(true);
+    clone.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+    return ((clone.textContent || '').replace(/\r\n/g, '\n'));
+  }
+
+  /**
    * Clone an element and remove a list of selectors from the clone.
    * @param {Element} element
    * @param {string[]} selectors
