@@ -14,17 +14,82 @@ function normalizeFenceLanguage(label) {
   return raw.replace(/\s+/g, '');
 }
 
+function normalizeLanguageMarkerBeforeFence(text) {
+  if (!text || !text.includes('```')) return text;
+
+  const languagePattern = /(C\+\+|CPP|Python|JavaScript|TypeScript|Java|Go|Rust|C#)/i;
+  const lines = text.split('\n');
+  const out = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const current = lines[i] || '';
+    const next = lines[i + 1] || '';
+    const nextTrim = next.trim();
+    const currentTrim = current.trim();
+
+    const standalone = currentTrim.match(new RegExp(`^${languagePattern.source}$`, 'i'));
+    if (standalone && nextTrim === '```') {
+      out.push(`\`\`\`${normalizeFenceLanguage(standalone[1])}`);
+      i += 1;
+      continue;
+    }
+
+    const inline = current.match(new RegExp(`${languagePattern.source}\\s*$`, 'i'));
+    if (inline && nextTrim === '```') {
+      const language = normalizeFenceLanguage(inline[1]);
+      const trimmed = current.replace(new RegExp(`${languagePattern.source}\\s*$`, 'i'), '').trimEnd();
+      if (trimmed) out.push(trimmed);
+      out.push(`\`\`\`${language}`);
+      i += 1;
+      continue;
+    }
+
+    out.push(current);
+  }
+
+  return out.join('\n');
+}
+
 function looksLikeCodeStart(line) {
   const text = (line || '').trim();
   if (!text) return false;
   return /^(#include|import\s+\w+|from\s+\w+\s+import|const\s+\w+|let\s+\w+|var\s+\w+|function\s+\w+|class\s+\w+|void\s+\w+|int\s+\w+|bool\s+\w+|if\s*\(|for\s*\(|while\s*\(|public\s+class|package\s+\w+)/.test(text);
 }
 
-function autoFenceLanguagePrefixedCode(text) {
-  if (!text || text.includes('```')) return text;
+function inferCodeLanguageFromText(text) {
+  const sample = (text || '').toLowerCase();
+  if (/#include\s*<|void\s+\w+\s*\(|const\s+int\s+\w+|digitalwrite\s*\(|pinmode\s*\(/.test(sample)) return 'cpp';
+  if (/^import\s+\w+|^from\s+\w+\s+import/m.test(sample)) return 'python';
+  if (/function\s+\w+\s*\(|const\s+\w+\s*=|let\s+\w+\s*=|=>/.test(sample)) return 'js';
+  return '';
+}
 
+function autoFenceLikelyCodeBlob(text) {
+  if (!text || text.includes('```')) return text;
   const lines = text.split('\n');
-  if (lines.length < 2) return text;
+  if (lines.length < 4) return text;
+
+  const nonEmpty = lines.map((l) => l.trim()).filter(Boolean);
+  if (nonEmpty.length < 4) return text;
+
+  const codeLikeLines = nonEmpty.filter((line) =>
+    /^(#include|\/\*|\*\/|\/\/|const\s+\w+|int\s+\w+|long\s+\w+|bool\s+\w+|void\s+\w+\s*\(|if\s*\(|for\s*\(|while\s*\(|return\b|class\s+\w+|template\s*<|digitalwrite\s*\(|pinmode\s*\(|serial\.)/.test(line)
+    || /[{};]/.test(line)
+  ).length;
+
+  if (codeLikeLines / nonEmpty.length < 0.45) return text;
+
+  const language = inferCodeLanguageFromText(text);
+  return `\`\`\`${language}\n${text}\n\`\`\``;
+}
+
+function autoFenceLanguagePrefixedCode(text) {
+  if (!text) return text;
+  const withNormalizedMarkers = normalizeLanguageMarkerBeforeFence(text);
+  if (withNormalizedMarkers.includes('```')) return withNormalizedMarkers;
+
+  const lines = withNormalizedMarkers.split('\n');
+  if (lines.length < 2) return withNormalizedMarkers;
 
   // Support outputs like "... flicker-free.C++" followed by code
   const firstLine = lines[0] || '';
@@ -45,7 +110,7 @@ function autoFenceLanguagePrefixedCode(text) {
     return `\`\`\`${language}\n${code}\n\`\`\``;
   }
 
-  return text;
+  return autoFenceLikelyCodeBlob(withNormalizedMarkers);
 }
 
 /**
