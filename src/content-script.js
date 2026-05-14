@@ -33,6 +33,7 @@ const SELECTION_BANNER_ID = 'ai-export-selection-banner';
 let selectionModeActive = false;
 let selectedKeys = [];
 let selectableNodes = [];
+const HEARTBEAT_INTERVAL_MS = 2000;
 
 function normalizeRole(role) {
   if (role === 'assistant') return 'model';
@@ -45,6 +46,34 @@ function getCurrentPlatform() {
   if (href.includes('claude.ai')) return 'claude';
   if (href.includes('gemini.google.com')) return 'gemini';
   return 'unknown';
+}
+
+function startProgressHeartbeat(action) {
+  const startedAt = Date.now();
+  const timer = setInterval(() => {
+    browserAPI.runtime.sendMessage({
+      type: "EXPORT_HEARTBEAT",
+      action,
+      elapsedMs: Date.now() - startedAt,
+      url: window.location.href,
+      platform: getCurrentPlatform(),
+    }, () => {
+      // ignore delivery errors (e.g., popup closed)
+    });
+  }, HEARTBEAT_INTERVAL_MS);
+
+  return () => {
+    clearInterval(timer);
+    browserAPI.runtime.sendMessage({
+      type: "EXPORT_HEARTBEAT_DONE",
+      action,
+      elapsedMs: Date.now() - startedAt,
+      url: window.location.href,
+      platform: getCurrentPlatform(),
+    }, () => {
+      // ignore delivery errors (e.g., popup closed)
+    });
+  };
 }
 
 function mapScrapeError(error) {
@@ -335,6 +364,8 @@ async function runSelectedExport() {
 // Listen for messages from the popup
 browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "SCRAPE_PAGE") {
+    const stopHeartbeat = startProgressHeartbeat("SCRAPE_PAGE");
+
     // Execute scraping asynchronously
     // runScrape() is exposed globally by initializeScrapers()
     if (typeof window.runScrape === 'function') {
@@ -349,8 +380,12 @@ browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
             error: mapScrapeError(error),
             timestamp: new Date().toISOString(),
           });
+        })
+        .finally(() => {
+          stopHeartbeat();
         });
     } else {
+      stopHeartbeat();
       console.error("[AI-Chat-Exporter] runScrape() not available - scraper not initialized for this platform");
       sendResponse({
         success: false,
@@ -371,6 +406,7 @@ browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "EXPORT_SELECTED") {
+    const stopHeartbeat = startProgressHeartbeat("EXPORT_SELECTED");
     runSelectedExport()
       .then((result) => sendResponse(result))
       .catch((error) => {
@@ -380,6 +416,9 @@ browserAPI.runtime.onMessage.addListener((request, sender, sendResponse) => {
           error: error.message,
           timestamp: new Date().toISOString(),
         });
+      })
+      .finally(() => {
+        stopHeartbeat();
       });
     return true;
   }
