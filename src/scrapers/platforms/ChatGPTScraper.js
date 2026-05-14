@@ -14,7 +14,6 @@ const CONTENT_LOAD_DELAY_MS = 300;  // Reduced from 500ms
 const RECOVERY_SCROLL_INCREMENT = 0.4;
 const RECOVERY_LOAD_DELAY_MS = 450;
 const DOM_STABILITY_POLL_MS = 75;
-const DOM_STABILITY_MAX_POLLS = 6;
 const SCROLL_POSITION_TOLERANCE = 10;
 const LOG_TEXT_PREVIEW_LENGTH = 50;
 
@@ -176,11 +175,13 @@ export class ChatGPTScraper extends BaseScraper {
 
   async waitForTurnSettle(scrollContainer, fallbackDelayMs) {
     const baseline = this.getTurnRenderFingerprint(scrollContainer);
-    for (let i = 0; i < DOM_STABILITY_MAX_POLLS; i++) {
+    const maxWaitMs = Math.max(fallbackDelayMs, DOM_STABILITY_POLL_MS);
+    const start = Date.now();
+
+    while (Date.now() - start < maxWaitMs) {
       await this.sleep(DOM_STABILITY_POLL_MS);
       if (this.getTurnRenderFingerprint(scrollContainer) !== baseline) return;
     }
-    await this.sleep(fallbackDelayMs);
   }
 
   getUnresolvedTurnKeys(allMessages, seenShellTurns, subset = null) {
