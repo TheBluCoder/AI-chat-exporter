@@ -42,6 +42,16 @@ export const CHATGPT_CONFIG = {
     stabilityTimeout: 10000,
     scrollIncrement: 0.8, // 80% of viewport height
   },
+
+  // Platform-specific language label aliases for markdown code fences.
+  codeLanguageAliases: {
+    'c++': 'cpp',
+    cpp: 'cpp',
+    'c#': 'csharp',
+    csharp: 'csharp',
+    javascript: 'js',
+    typescript: 'ts',
+  },
 };
 
 export default CHATGPT_CONFIG;

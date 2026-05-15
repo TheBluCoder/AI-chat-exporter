@@ -587,6 +587,124 @@ export class BaseScraper {
 
     return message;
   }
+
+  /**
+   * Normalize code language labels to markdown-friendly identifiers.
+   * Uses platform config aliases when provided.
+   * @param {string} label
+   * @returns {string}
+   */
+  normalizeCodeLanguage(label) {
+    const raw = (label || '').trim().toLowerCase();
+    if (!raw) return '';
+
+    const defaultAliases = {
+      'c++': 'cpp',
+      'cpp': 'cpp',
+      'c#': 'csharp',
+      'csharp': 'csharp',
+      'javascript': 'js',
+      'typescript': 'ts',
+    };
+
+    const configuredAliases = this.config?.codeLanguageAliases || {};
+    const aliases = { ...defaultAliases, ...configuredAliases };
+    const normalized = aliases[raw] || raw.replace(/\s+/g, '');
+
+    if (!/^[a-z0-9#+._-]{1,20}$/i.test(normalized)) return '';
+    return normalized;
+  }
+
+  /**
+   * Determine safe code-fence width when content may already contain backticks.
+   * @param {string} content
+   * @returns {string}
+   */
+  getBacktickWrapper(content) {
+    const minBackticks = 3;
+    if (!content) return '`'.repeat(minBackticks);
+
+    const backtickMatches = content.match(/`+/g);
+    let maxBackticks = 0;
+    if (backtickMatches) {
+      maxBackticks = Math.max(...backtickMatches.map((m) => m.length));
+    }
+    return '`'.repeat(Math.max(minBackticks, maxBackticks + 1));
+  }
+
+  /**
+   * Extract a normalized language identifier from a class attribute string.
+   * @param {string} classNames
+   * @returns {string}
+   */
+  extractCodeLanguageFromClass(classNames) {
+    const match = String(classNames || '').match(/language-([\w+-]+)/i);
+    return this.normalizeCodeLanguage(match ? match[1] : '');
+  }
+
+  /**
+   * Create a fenced markdown code block with safe backtick width.
+   * @param {string} codeContent
+   * @param {string} language
+   * @param {string} prefix
+   * @returns {string}
+   */
+  createMarkdownCodeBlock(codeContent, language = '', prefix = '\n', suffix = '\n') {
+    const content = (codeContent || '').trimEnd();
+    const ticks = this.getBacktickWrapper(content);
+    const lang = this.normalizeCodeLanguage(language);
+    return `${prefix}${ticks}${lang}\n${content}\n${ticks}${suffix}`;
+  }
+
+  /**
+   * Extract code text while preserving logical line breaks across different renderers.
+   * Handles DOMs that rely on <br> and CodeMirror-like line wrappers.
+   * @param {Element} codeElement
+   * @returns {string}
+   */
+  extractCodeTextPreserveLines(codeElement) {
+    if (!codeElement) return '';
+
+    const direct = (codeElement.innerText || '').replace(/\r\n/g, '\n');
+    if (direct.includes('\n')) return direct;
+
+    const cmLines = codeElement.querySelectorAll('.cm-line');
+    if (cmLines.length > 0) {
+      const joined = Array.from(cmLines).map((line) => (line.innerText || '').replace(/\r\n/g, '\n')).join('\n');
+      if (joined.trim()) return joined;
+    }
+
+    const clone = codeElement.cloneNode(true);
+    clone.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+    return ((clone.textContent || '').replace(/\r\n/g, '\n'));
+  }
+
+  /**
+   * Clone an element and remove a list of selectors from the clone.
+   * @param {Element} element
+   * @param {string[]} selectors
+   * @returns {Element|null}
+   */
+  cloneAndStripSelectors(element, selectors = []) {
+    if (!element) return null;
+    const clone = element.cloneNode(true);
+    selectors.forEach((selector) => {
+      if (!selector) return;
+      clone.querySelectorAll(selector).forEach((node) => node.remove());
+    });
+    return clone;
+  }
+
+  /**
+   * Extract trimmed innerText from an element, optionally stripping selectors first.
+   * @param {Element} element
+   * @param {string[]} selectors
+   * @returns {string}
+   */
+  extractCleanInnerText(element, selectors = []) {
+    const clone = this.cloneAndStripSelectors(element, selectors);
+    return clone ? clone.innerText.trim() : '';
+  }
 }
 
 export default BaseScraper;

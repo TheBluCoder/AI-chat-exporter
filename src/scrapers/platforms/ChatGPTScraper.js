@@ -208,10 +208,9 @@ export class ChatGPTScraper extends BaseScraper {
     if (!contentContainer) return '';
 
     const targetElement = contentContainer.querySelector(this.selectors.USER_TEXT) || contentContainer;
-    const clone = targetElement.cloneNode(true);
+    const clone = this.cloneAndStripSelectors(targetElement, ['button']);
 
     this.replaceInlineImagesWithMarkdown(clone, this.selectors.UPLOADED_IMG);
-    clone.querySelectorAll('button').forEach(el => el.remove());
 
     return clone.innerText.trim();
   }
@@ -232,7 +231,7 @@ export class ChatGPTScraper extends BaseScraper {
     const targetElement = contentContainer.querySelector(this.selectors.MODEL_TEXT) || contentContainer;
 
     // Clone to avoid modifying the actual DOM
-    const clone = targetElement.cloneNode(true);
+    const clone = this.cloneAndStripSelectors(targetElement, ['button']);
 
     // Preserve image position relative to surrounding text
     this.replaceInlineImagesWithMarkdown(clone, this.selectors.GENERATED_IMG);
@@ -243,26 +242,25 @@ export class ChatGPTScraper extends BaseScraper {
       // 1. Extract the code content
       const codeEl = pre.querySelector('code');
       if (!codeEl) return; // Not a standard code block
-      const codeContent = codeEl.innerText;
+      const codeContent = this.extractCodeTextPreserveLines(codeEl);
 
-      // 2. Extract the language (header)
+      // 2. Extract language (prefer explicit header label from ChatGPT UI)
+      const headerLabel = pre.querySelector('.text-token-text-primary')?.innerText?.trim() || '';
+
+      // 3. Fallback language extraction from wrapper text
       const preClone = pre.cloneNode(true);
       if (preClone.querySelector('code')) preClone.querySelector('code').remove();
       preClone.querySelectorAll('button').forEach(b => b.remove());
 
-      // The remaining text should be the language (e.g., "kotlin", "javascript")
-      const apiLang = preClone.innerText.trim();
-      const language = apiLang || '';
+      const fallbackLabel = preClone.innerText.trim().split('\n')[0] || '';
+      const language = this.normalizeCodeLanguage(headerLabel || fallbackLabel);
 
-      // 3. Replace the entire pre element with a markdown code block representation
-      const markdownBlock = `\n\`\`\`${language}\n${codeContent}\n\`\`\`\n`;
+      // 4. Replace the entire pre element with a markdown code block representation
+      const markdownBlock = this.createMarkdownCodeBlock(codeContent, language);
 
       // Create a text node to replace the pre element
       pre.replaceWith(document.createTextNode(markdownBlock));
     });
-
-    // Remove any remaining buttons
-    clone.querySelectorAll('button').forEach(el => el.remove());
 
     // Get the final text
     const text = clone.innerText.trim();

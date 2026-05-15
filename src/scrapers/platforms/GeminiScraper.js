@@ -225,6 +225,51 @@ export class GeminiScraper extends BaseScraper {
   }
 
   /**
+   * Extract model text while preserving code blocks as fenced markdown.
+   * Gemini often renders code visually, so plain innerText can flatten it.
+   * @param {Element} modelResponseElement
+   * @returns {string}
+   */
+  extractModelText(modelResponseElement) {
+    if (!modelResponseElement) return '';
+
+    const contentRoot = modelResponseElement.querySelector(this.selectors.MESSAGE_CONTENT) || modelResponseElement;
+    const clone = this.cloneAndStripSelectors(contentRoot, [
+      'button',
+      '[role="button"][aria-label]',
+      '.cdk-visually-hidden'
+    ]);
+    if (!clone) return '';
+
+    // Convert rendered code blocks to markdown fences before extracting text.
+    clone.querySelectorAll('pre').forEach((pre) => {
+      const codeEl = pre.querySelector('code');
+      const codeContent = (codeEl ? codeEl.innerText : pre.innerText || '').trimEnd();
+      if (!codeContent) {
+        pre.remove();
+        return;
+      }
+
+      const classNames = ((codeEl?.getAttribute('class')) || pre.getAttribute('class') || '');
+      const language = this.extractCodeLanguageFromClass(classNames);
+      const fenced = this.createMarkdownCodeBlock(codeContent, language);
+      pre.replaceWith(document.createTextNode(fenced));
+    });
+
+    // Fallback: inline code blocks that may not be nested in <pre>.
+    clone.querySelectorAll('code').forEach((code) => {
+      const text = (code.innerText || code.textContent || '').trim();
+      if (!text) {
+        code.remove();
+        return;
+      }
+      code.replaceWith(document.createTextNode(`\`${text}\``));
+    });
+
+    return clone.innerText.trim();
+  }
+
+  /**
    * Extract content from immersive embedded documents (chips)
    * @param {Element} modelResponseElement - The model-response element
    * @returns {Promise<Array|null>} Array of embedded documents or null

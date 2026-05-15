@@ -11,8 +11,6 @@ import { extractMedia } from '../../utils-modules/media.js';
 import { PREVIEW_CLOSE_DELAY_MS } from '../base/constants.js';
 
 // Constants
-const MIN_BACKTICKS = 3;
-const BACKTICK_INCREMENT = 1;
 const PREVIEW_OPEN_DELAY_MS = 600;
 const PANEL_OPEN_DELAY_MS = 400;
 const PANEL_CLOSE_DELAY_MS = 300;
@@ -41,23 +39,6 @@ export class ClaudeScraper extends BaseScraper {
     }
 
     /**
-     * Determine the correct number of backticks to use for a code block
-     * Ensures nested code blocks (like in markdown artifacts) are properly wrapped
-     * @param {string} content - The code content to wrap
-     * @returns {string} String of backticks (e.g., "```" or "````")
-     */
-    getBacktickWrapper(content) {
-        if (!content) return '```';
-        const backtickMatches = content.match(/`+/g);
-        let maxBackticks = 0;
-        if (backtickMatches) {
-            maxBackticks = Math.max(...backtickMatches.map(m => m.length));
-        }
-        // Use at least 3, or max found + 1
-        return '`'.repeat(Math.max(MIN_BACKTICKS, maxBackticks + BACKTICK_INCREMENT));
-    }
-
-    /**
      * Extract user message text with proper formatting
      * Overrides BaseScraper to handle code blocks, lists, and buttons
      * @param {Element} userQuery - User message element
@@ -66,16 +47,10 @@ export class ClaudeScraper extends BaseScraper {
     extractUserText(userQuery) {
         if (!userQuery) return '';
 
-        // Clone to avoid modifying DOM
-        const clone = userQuery.cloneNode(true);
-
-        // Remove action buttons (Show more/less, etc.)
-        clone.querySelectorAll('button').forEach(b => b.remove());
-
-        // Remove line numbers
-        if (this.selectors.LINE_NUMBERS) {
-            clone.querySelectorAll(this.selectors.LINE_NUMBERS).forEach(el => el.remove());
-        }
+        const removeSelectors = ['button'];
+        if (this.selectors.LINE_NUMBERS) removeSelectors.push(this.selectors.LINE_NUMBERS);
+        const clone = this.cloneAndStripSelectors(userQuery, removeSelectors);
+        if (!clone) return '';
 
         // Process code blocks - convert to markdown format
         clone.querySelectorAll('.code-block__code').forEach(codeBlock => {
@@ -84,15 +59,13 @@ export class ClaudeScraper extends BaseScraper {
 
             // Extract language from class if present
             const codeClass = codeEl.getAttribute('class') || '';
-            const languageMatch = codeClass.match(/language-(\w+)/);
-            const language = languageMatch ? languageMatch[1] : '';
+            const language = this.extractCodeLanguageFromClass(codeClass);
 
             // Get code content
             const codeContent = codeEl.innerText || codeEl.textContent;
 
             // Create markdown code block with appropriate backticks
-            const ticks = this.getBacktickWrapper(codeContent);
-            const markdownBlock = `\n${ticks}${language}\n${codeContent}\n${ticks}\n`;
+            const markdownBlock = this.createMarkdownCodeBlock(codeContent, language);
 
             // Replace the code block element with markdown text
             codeBlock.replaceWith(document.createTextNode(markdownBlock));
@@ -356,15 +329,13 @@ export class ClaudeScraper extends BaseScraper {
 
             // Extract language from class (e.g., "language-python" -> "python")
             const codeClass = codeEl.getAttribute('class') || '';
-            const languageMatch = codeClass.match(/language-(\w+)/);
-            const language = languageMatch ? languageMatch[1] : '';
+            const language = this.extractCodeLanguageFromClass(codeClass);
 
             // Get code content
             const codeContent = codeEl.innerText || codeEl.textContent;
 
             // Create markdown code block with appropriate backticks
-            const ticks = this.getBacktickWrapper(codeContent);
-            const markdownBlock = `\n${ticks}${language}\n${codeContent}\n${ticks}\n`;
+            const markdownBlock = this.createMarkdownCodeBlock(codeContent, language);
 
             // Replace the code block element with markdown text
             codeBlock.replaceWith(document.createTextNode(markdownBlock));
@@ -423,15 +394,18 @@ export class ClaudeScraper extends BaseScraper {
 
                     // Extract language
                     const codeClass = codeEl.getAttribute('class') || '';
-                    const languageMatch = codeClass.match(/language-(\w+)/);
-                    const language = languageMatch ? languageMatch[1] : '';
+                    const language = this.extractCodeLanguageFromClass(codeClass);
 
                     // Get code content
                     const codeContent = codeClone.innerText || codeClone.textContent;
 
                     // Format as markdown with title comment, using safe backticks
-                    const ticks = this.getBacktickWrapper(codeContent);
-                    const markdownBlock = `${ticks}${language}\n# ${title}\n${codeContent}\n${ticks}`;
+                    const markdownBlock = this.createMarkdownCodeBlock(
+                        `# ${title}\n${codeContent}`,
+                        language,
+                        '',
+                        ''
+                    );
 
                     // Close panel
                     const closeBtn = document.querySelector(this.selectors.ARTIFACT_CLOSE_BUTTON);

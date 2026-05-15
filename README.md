@@ -1,6 +1,6 @@
 # AI Chat Exporter
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
+[![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/TheBluCoder/AI-chat-exporter)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Browser](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Firefox%20%7C%20Safari-orange.svg)](#browser-compatibility)
 [![Architecture](https://img.shields.io/badge/architecture-ES6%20Modules-brightgreen.svg)](docs/ES6_MIGRATION.md)
@@ -73,7 +73,7 @@ Full walkthrough (video + text): [How to Use Guide](docs/HOW_TO_USE.md)
 
 ### Known Issues
 
-Most previously reported issues are now fixed in v2.0.0.
+Most previously reported issues are now fixed in v2.0.1.
 
 Current known issue:
 - **Claude artifact edge cases**: some complex artifact/preview extraction cases can still fail depending on Claude UI state and panel behavior.
@@ -91,10 +91,10 @@ Notes:
 
 ### Platform-Specific Features
 - **Gemini**: Extracts uploaded documents, immersive editor content, and shared conversation links
-- **ChatGPT**: Progressive scroll extraction for lazy-loaded conversations, code blocks, generated images
+- **ChatGPT**: Virtualized-turn-aware extraction with recovery sweeps, long-run progress heartbeat, code blocks, generated images
 - **Claude**: Preview panel extraction (artifacts), code blocks with syntax highlighting (PDF extraction not yet supported)
 
-## Project Structure (v2.0 ES6 Architecture)
+## Project Structure (v2.0.1 ES6 Architecture)
 
 ```
 ai-chat-exporter/
@@ -119,7 +119,9 @@ ai-chat-exporter/
 │   │   ├── mime.js               # MIME type detection
 │   │   ├── media.js              # Media handling
 │   │   └── markdown.js           # Markdown conversion
-│   ├── content-script.js         # Entry point (dynamic imports)
+│   ├── content-script.js         # Thin entry point
+│   ├── content/
+│   │   └── handler.js            # Content-script orchestration and message handling
 │   └── lib/
 │       └── browser-polyfill.js   # Browser API compatibility
 ├── assets/
@@ -227,6 +229,8 @@ Found an issue? The extension includes a built-in "Report Issue" button that aut
 - [x] Media embedding controls (embed or URL-only)
 - [x] Export Selected mode (single-anchor + multi-select)
 - [x] Auto-recovery for missing content-script connection
+- [x] ChatGPT virtualized-turn recovery (prevents skipped middle turns)
+- [x] ChatGPT progress heartbeat for long-running exports
 - [x] Privacy-first cache controls and optional broad media host access
 - [x] 70% code reduction through shared utilities
 - [x] Cross-browser compatibility (Chrome, Edge, Firefox, Safari)
