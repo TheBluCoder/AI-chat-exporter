@@ -28,8 +28,8 @@ export const DEFAULT_SETTINGS = {
 
 // Platform URL Patterns (duplicated from scrapers/base/constants.js for popup context)
 export const PLATFORM_URL_PATTERNS = {
-  CHATGPT: /^https:\/\/(chatgpt\.com|chat\.openai\.com)\/c\//,
-  GEMINI_CHAT: /^https:\/\/gemini\.google\.com\/(?!share\/)/,
-  CLAUDE: /^https:\/\/claude\.ai\/chat\//,
+  CHATGPT: /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//,
+  GEMINI_CHAT: /^https:\/\/gemini\.google\.com\//,
+  CLAUDE: /^https:\/\/claude\.ai\//,
   GEMINI_SHARED: /^https:\/\/gemini\.google\.com\/share\//,
 };

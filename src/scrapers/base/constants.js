@@ -31,6 +31,6 @@ export const DOM_STABILITY_POLL_MS = 75;
 export const PLATFORM_URL_PATTERNS = {
   CHATGPT: /^https:\/\/(chatgpt\.com|chat\.openai\.com)\//,
   GEMINI_CHAT: /^https:\/\/gemini\.google\.com\/(?!share\/)/,
-  CLAUDE: /^https:\/\/claude\.ai\/chat\//,
+  CLAUDE: /^https:\/\/claude\.ai\//,
   GEMINI_SHARED: /^https:\/\/gemini\.google\.com\/share\//,
 };
