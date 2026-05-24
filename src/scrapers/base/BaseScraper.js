@@ -69,6 +69,9 @@ export class BaseScraper {
 
       // Extract all messages
       const messages = await this.extractAllMessages(container);
+      if (!messages.length) {
+        throw new Error('No chat messages found. This looks like a new chat. Send a message first, then try exporting again.');
+      }
 
       // Calculate statistics
       const statistics = this.calculateStatistics(messages);
