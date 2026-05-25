@@ -128,8 +128,9 @@ ai-chat-exporter/
 │   └── icons/                    # Extension icons
 ├── docs/                         # Documentation
 │   ├── ES6_MIGRATION.md          # Architecture guide
-│   ├── TECHNICAL_GUIDE.md
-│   └── ...
+│   ├── HOW_TO_USE.md             # Usage walkthrough
+│   ├── RELEASE_NOTES_2.0.0.md
+│   └── RELEASE_NOTES_2.0.1.md
 ├── manifest.json                 # Manifest V3
 └── README.md
 ```
@@ -154,15 +155,14 @@ cd AI-chat-exporter
 
 ## Documentation
 
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
+Available documentation:
 
-- **[ES6 Migration Guide](docs/ES6_MIGRATION.md)** - ⭐ NEW: Modern architecture, template pattern, extending scrapers
-- [Technical Guide](docs/TECHNICAL_GUIDE.md) - Architecture and implementation details
-- [Quickstart Guide](docs/QUICKSTART.md) - Getting started quickly
-- [Setup Instructions](docs/SETUP_INSTRUCTIONS.md) - Detailed installation guide
-- [Gemini Scraper Guide](docs/GEMINI_SCRAPER_GUIDE.md) - Gemini-specific scraping details
-- [Router Guide](docs/ROUTER_GUIDE.md) - Platform detection system
-- [Scraper Comparison](docs/SCRAPER_COMPARISON.md) - Comparing different scrapers
+- **[ES6 Migration Guide](docs/ES6_MIGRATION.md)** - Modern architecture, template pattern, and extending scrapers
+- [How to Use Guide](docs/HOW_TO_USE.md) - Video and text walkthrough for exporting conversations
+- [Release Notes v2.0.1](docs/RELEASE_NOTES_2.0.1.md) - Latest fixes and improvements
+- [Release Notes v2.0.0](docs/RELEASE_NOTES_2.0.0.md) - ES6 architecture release notes
+
+For quick setup, see the [Quick Start](#quick-start) section in this README.
 
 ### For Developers
 
