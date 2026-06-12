@@ -1,0 +1,44 @@
+[
+  {
+    "name": "AI Chat Exporter",
+    "description": "<b>AI Chat Exporter</b> is a browser extension for exporting conversations from ChatGPT, Claude, and Gemini into portable formats like JSON, Markdown, and PDF. It preserves conversation structure, code blocks, generated media, and supported uploaded documents while running entirely in the browser for a privacy-first workflow. The extension also supports selective export, media embedding controls, and a modular scraper architecture that makes it easier to maintain and extend across multiple AI platforms.",
+    "image": "",
+    "video": "https://www.youtube.com/watch?v=1etNXLYsViU&feature=youtu.be",
+    "demo": "https://chromewebstore.google.com/detail/ai-chat-exporter/dfkonbknfdohjkabbajhghecgjpbmphc",
+    "type": "website",
+    "source_code_url": "https://github.com/TheBluCoder/AI-chat-exporter",
+    "tech_stack": [
+      {
+        "name": "JavaScript",
+        "icon": "fa-brands fa-js"
+      },
+      {
+        "name": "HTML",
+        "icon": "fa-brands fa-html5"
+      },
+      {
+        "name": "CSS",
+        "icon": "fa-brands fa-css3-alt"
+      },
+      {
+        "name": "Chrome Extensions",
+        "icon": "fa-brands fa-chrome"
+      },
+      {
+        "name": "WebExtensions API",
+        "icon": "fa-solid fa-puzzle-piece"
+      },
+      {
+        "name": "Manifest V3",
+        "icon": "fa-solid fa-file-code"
+      }
+    ],
+    "deployment_stack": [
+      "Chrome Web Store"
+    ],
+    "topics": [
+      ""
+    ],
+    "updated_at": "2026-06-12T01:43:42.3534173-04:00"
+  }
+]
