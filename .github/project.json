@@ -8,7 +8,7 @@
     "image": "",
     "video": "https://www.youtube.com/watch?v=1etNXLYsViU&feature=youtu.be",
     "demo": "https://chromewebstore.google.com/detail/ai-chat-exporter/dfkonbknfdohjkabbajhghecgjpbmphc",
-    "type": "browser-extension",
+    "type": "web extension",
     "source_code_url": "https://github.com/TheBluCoder/AI-chat-exporter",
     "tech_stack": [
       {
@@ -40,7 +40,7 @@
       "Chrome Web Store"
     ],
     "topics": [
-      "browser-extension",
+      "extension",
       "chatgpt",
       "claude",
       "gemini",
