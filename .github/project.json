@@ -2,10 +2,13 @@
   {
     "name": "AI Chat Exporter",
     "description": "<b>AI Chat Exporter</b> is a browser extension for exporting conversations from ChatGPT, Claude, and Gemini into portable formats like JSON, Markdown, and PDF. It preserves conversation structure, code blocks, generated media, and supported uploaded documents while running entirely in the browser for a privacy-first workflow. The extension also supports selective export, media embedding controls, and a modular scraper architecture that makes it easier to maintain and extend across multiple AI platforms.",
+    "what": "This project is a <b>browser extension</b> built to turn AI chat sessions into portable, readable artifacts without sending conversation data to a backend. It supports <b>ChatGPT</b>, <b>Claude</b>, and <b>Gemini</b>, and can export conversations as <b>JSON</b>, <b>Markdown</b>, or <b>PDF</b>. Under the hood, the extension uses a modular scraper architecture with a shared <b>BaseScraper</b> abstraction, platform-specific scraper implementations, shared media and markdown utilities, and a popup-driven export flow. It also handles platform-specific edge cases like ChatGPT virtualized conversations, Claude preview panels, Gemini immersive docs, media embedding preferences, and selective export from chosen messages.",
+    "why": "I wanted a reliable way to preserve AI conversations in formats that are actually useful outside the chat UI, whether for documentation, research notes, bug reports, or personal archives. Most export tools either support only one platform, send data through external services, or break when the platform UI changes. This project was designed to be privacy-first, multi-platform, and maintainable over time, with clear separation between shared export logic and platform-specific scraping behavior.",
+    "impact": "The extension makes AI conversations easier to reuse, share, audit, and archive while keeping the export process local to the user's browser. It reduces lock-in to individual chat platforms, gives users cleaner outputs for downstream workflows, and provides a reusable architecture for adding support for future AI tools. The project also has real-world traction, with 25+ GitHub stars and over 500 users, which helps show that the product solves a genuine need rather than existing only as a technical demo. As a portfolio project, it demonstrates practical product thinking around browser APIs, cross-platform scraping, privacy constraints, maintainable extension architecture, and shipping something people actually use.",
     "image": "",
     "video": "https://www.youtube.com/watch?v=1etNXLYsViU&feature=youtu.be",
     "demo": "https://chromewebstore.google.com/detail/ai-chat-exporter/dfkonbknfdohjkabbajhghecgjpbmphc",
-    "type": "website",
+    "type": "browser-extension",
     "source_code_url": "https://github.com/TheBluCoder/AI-chat-exporter",
     "tech_stack": [
       {
@@ -37,8 +40,15 @@
       "Chrome Web Store"
     ],
     "topics": [
-      ""
+      "browser-extension",
+      "chatgpt",
+      "claude",
+      "gemini",
+      "markdown-export",
+      "pdf-export",
+      "privacy-first",
+      "webextensions"
     ],
-    "updated_at": "2026-06-12T01:43:42.3534173-04:00"
+    "updated_at": "2026-06-22T00:00:00-04:00"
   }
 ]
