@@ -13,19 +13,19 @@
     "tech_stack": [
       {
         "name": "JavaScript",
-        "icon": "fa-brands fa-js"
+        "icon": "devicon:javascript"
       },
       {
-        "name": "HTML",
-        "icon": "fa-brands fa-html5"
+        "name": "HTML5",
+        "icon": "devicon:html5"
       },
       {
-        "name": "CSS",
-        "icon": "fa-brands fa-css3-alt"
+        "name": "CSS3",
+        "icon": "devicon:css3"
       },
       {
         "name": "Chrome Extensions",
-        "icon": "fa-brands fa-chrome"
+        "icon": "simple-icons:googlechrome"
       },
       {
         "name": "WebExtensions API",
@@ -35,9 +35,6 @@
         "name": "Manifest V3",
         "icon": "fa-solid fa-file-code"
       }
-    ],
-    "deployment_stack": [
-      "Chrome Web Store"
     ],
     "topics": [
       "extension",
